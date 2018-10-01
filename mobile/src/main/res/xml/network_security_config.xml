@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- SSD -->
+    <base-config cleartextTrafficPermitted="true"/>
+    <!-- DSS -->
+</network-security-config>
