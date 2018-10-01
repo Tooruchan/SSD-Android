@@ -18,7 +18,11 @@ Android 5.0+
 
 ## Development - 开发
 
-Centos7
+Centos 7
+```
+  *  Q: 如何使用Windows进行开发？
+     A: 抱歉我也不知道。如果有兴趣，可以自行尝试：https://github.com/shadowsocks/shadowsocks-android/pull/1570
+```    
 
 JDK 1.8
 
