@@ -5,6 +5,9 @@
 [shadowsocks-android](https://github.com/shadowsocks/shadowsocks-android)
 
 ShadowsocksD会跟随Shadowsocks更新代码。
+```
+  *  ShadowsocksD中的广告收入依然归Shadowsocks项目作者所有，ShadowsocksD不会分取此收入
+```
 
 ## Shared Wiki - 共享Wiki
 
