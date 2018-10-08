@@ -6,9 +6,9 @@
 
 ShadowsocksD会跟随Shadowsocks更新代码。
 ```
-  *  因为使用了相同的包名，因此安装SSD时需要先卸载SS
+  *  因为使用了相同的包名，因此安装ShadowsocksD时需要先卸载Shadowsocks
   
-  *  SSD中的广告收入依然归SS项目作者所有，ShadowsocksD不会分取此收入
+  *  ShadowsocksD中的广告收入依然归Shadowsocks项目作者所有，ShadowsocksD不会分取此收入
 ```
 
 ## Shared Wiki - 共享Wiki
