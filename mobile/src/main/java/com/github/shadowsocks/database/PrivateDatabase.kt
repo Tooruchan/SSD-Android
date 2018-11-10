@@ -65,8 +65,8 @@ abstract class PrivateDatabase : RoomDatabase() {
         override fun migrate(database: SupportSQLiteDatabase) {
             super.migrate(database)
             //region SSD
-            val migration3=RecreateSchemaMigration(
-                    2,3,
+            val migration4=RecreateSchemaMigration(
+                    3,4,
                     "Subscription",
                     "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                             "`airport` TEXT, " +
@@ -76,9 +76,13 @@ abstract class PrivateDatabase : RoomDatabase() {
                             "`traffic_used` REAL NOT NULL, " +
                             "`traffic_total` REAL NOT NULL, " +
                             "`expiry` TEXT NOT NULL, " +
-                            "`url` TEXT NOT NULL)",
-                    "`id`, `airport`, `port`, `encryption`, `password`, `traffic_used`, `traffic_total`, `expiry`, `url`")
-            migration3.migrate(database)
+                            "`url` TEXT NOT NULL, "+
+                            "`plugin` TEXT NOT NULL, "+
+                            "`plugin_options` TEXT NOT NULL)",
+                    "`id`, `airport`, `port`, `encryption`, `password`, "+
+                            "`traffic_used`, `traffic_total`, `expiry`, `url`, "+
+                            "`plugin`, `plugin_options`")
+            migration4.migrate(database)
             //endregion
             PublicDatabase.Migration3.migrate(database)
         }

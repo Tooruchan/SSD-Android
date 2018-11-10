@@ -155,7 +155,6 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface, OnPre
             }
         }
     }
-
     //region SSD
     private class CheckVersion:AsyncTask<Unit,Int,String>(){
         val versionURL="https://api.github.com/repos/CGDF-GitHub/SSD-Android/releases/latest"

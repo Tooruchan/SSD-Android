@@ -34,7 +34,6 @@ import android.os.Bundle
 import android.text.format.Formatter
 import android.util.Base64
 import android.view.*
-import android.webkit.DateSorter
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
@@ -51,6 +50,7 @@ import com.github.shadowsocks.database.ProfileManager
 import com.github.shadowsocks.database.Subscription
 import com.github.shadowsocks.database.SubscriptionManager
 import com.github.shadowsocks.plugin.PluginConfiguration
+import com.github.shadowsocks.plugin.PluginOptions
 import com.github.shadowsocks.preference.DataStore
 import com.github.shadowsocks.utils.Action
 import com.github.shadowsocks.utils.datas
@@ -65,8 +65,6 @@ import org.json.JSONObject
 import java.net.URL
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -86,10 +84,12 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
     /**
      * Is ProfilesFragment editable at all.
      */
-    private val isEnabled get() = when ((activity as MainActivity).state) {
-        BaseService.CONNECTED, BaseService.STOPPED -> true
-        else -> false
-    }
+    private val isEnabled
+        get() = when ((activity as MainActivity).state) {
+            BaseService.CONNECTED, BaseService.STOPPED -> true
+            else -> false
+        }
+
     private fun isProfileEditable(id: Long) = when ((activity as MainActivity).state) {
         BaseService.CONNECTED -> id != DataStore.profileId
         BaseService.STOPPED -> true
@@ -183,7 +183,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 itemView.isSelected = true
                 selectedItem = this
                 //region SSD
-                selectedProfileSubscription=null
+                selectedProfileSubscription = null
                 //endregion
             } else {
                 itemView.isSelected = false
@@ -284,6 +284,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             updated.add(first)
             notifyItemMoved(from, to)
         }
+
         fun commitMove() {
             updated.forEach { ProfileManager.updateProfile(it) }
             updated.clear()
@@ -293,12 +294,14 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             profiles.removeAt(pos)
             notifyItemRemoved(pos)
         }
+
         fun undo(actions: List<Pair<Int, Profile>>) {
             for ((index, item) in actions) {
                 profiles.add(index, item)
                 notifyItemInserted(index)
             }
         }
+
         fun commit(actions: List<Pair<Int, Profile>>) {
             for ((_, item) in actions) ProfileManager.delProfile(item.id)
         }
@@ -307,12 +310,14 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             val index = profiles.indexOfFirst { it.id == id }
             if (index >= 0) notifyItemChanged(index)
         }
+
         fun deepRefreshId(id: Long) {
             val index = profiles.indexOfFirst { it.id == id }
             if (index < 0) return
             profiles[index] = ProfileManager.getProfile(id)!!
             notifyItemChanged(index)
         }
+
         fun removeId(id: Long) {
             val index = profiles.indexOfFirst { it.id == id }
             if (index < 0) return
@@ -323,37 +328,39 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
     }
 
     //region SSD
-    inner class ProfileSubscriptionViewHolder(view: View):RecyclerView.ViewHolder(view){
+    inner class ProfileSubscriptionViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         internal lateinit var item: Subscription
-        internal var profiles = ProfileManager.getAllProfilesWithSubscription()?.toMutableList() ?: mutableListOf()
-        private val traffic_usage=itemView.findViewById<TextView>(R.id.text_traffic_usage)
-        private val expiry=itemView.findViewById<TextView>(R.id.text_expiry)
+        internal var profiles = ProfileManager.getAllProfilesWithSubscription()?.toMutableList()
+                ?: mutableListOf()
+        private val traffic_usage = itemView.findViewById<TextView>(R.id.text_traffic_usage)
+        private val expiry = itemView.findViewById<TextView>(R.id.text_expiry)
         private val text1 = itemView.findViewById<TextView>(R.id.airport_name)
         private val text2 = itemView.findViewById<TextView>(android.R.id.text2)
         private val traffic = itemView.findViewById<TextView>(R.id.traffic)
-        private val serverDroplist=itemView.findViewById<Spinner>(R.id.server_list)
+        private val serverDroplist = itemView.findViewById<Spinner>(R.id.server_list)
         private val edit = itemView.findViewById<View>(R.id.edit)
 
         init {
             edit.setOnClickListener {
                 val editProfile = ProfileManager.getProfile(item.selectedProfileId)
-                if(editProfile!=null){
+                if (editProfile != null) {
                     startConfig(editProfile)
                 }
             }
             TooltipCompat.setTooltipText(edit, edit.contentDescription)
 
-            serverDroplist.onItemSelectedListener  = object : AdapterView.OnItemSelectedListener{
+            serverDroplist.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onNothingSelected(parent: AdapterView<*>?) {
 
                 }
+
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    val selectedProfile=profiles.first {
-                        it.name==serverDroplist.selectedItem.toString()
+                    val selectedProfile = profiles.first {
+                        it.name == serverDroplist.selectedItem.toString()
                     }
-                    item.selectedProfileId=selectedProfile.id
+                    item.selectedProfileId = selectedProfile.id
                     SubscriptionManager.updateSubscription(item)
-                    if (selectedProfileSubscription==this@ProfileSubscriptionViewHolder){
+                    if (selectedProfileSubscription == this@ProfileSubscriptionViewHolder) {
                         val activity = activity as MainActivity
                         app.switchProfile(item.selectedProfileId)
                         itemView.isSelected = true
@@ -379,14 +386,14 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         fun bind(item: Subscription) {
             updateProfiles()
             this.item = item
-            text1.text=item.airport
-            traffic_usage.text="%.2f / %.2f G".format(item.trafficUsed,item.trafficTotal)
-            val expiryDate=SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(item.expiry)
-            val expiryDays=TimeUnit.DAYS.convert(expiryDate.time-Calendar.getInstance().time.time,TimeUnit.MILLISECONDS)
-            expiry.text=getString(R.string.subscription_expiry).format(item.expiry,expiryDays)
-            edit.alpha=1F
-            var selectedProfile=ProfileManager.getProfile(item.selectedProfileId)
-            if(selectedProfile==null || selectedProfile.subscription!=item.id) {
+            text1.text = item.airport
+            traffic_usage.text = "%.2f / %.2f G".format(item.trafficUsed, item.trafficTotal)
+            val expiryDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(item.expiry)
+            val expiryDays = TimeUnit.DAYS.convert(expiryDate.time - Calendar.getInstance().time.time, TimeUnit.MILLISECONDS)
+            expiry.text = getString(R.string.subscription_expiry).format(item.expiry, expiryDays)
+            edit.alpha = 1F
+            var selectedProfile = ProfileManager.getProfile(item.selectedProfileId)
+            if (selectedProfile == null || selectedProfile.subscription != item.id) {
                 selectedProfile = profiles.first {
                     it.subscription == item.id
                 }
@@ -407,40 +414,42 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             if (selectedProfile.id == DataStore.profileId) {
                 itemView.isSelected = true
                 selectedItem = null
-                selectedProfileSubscription=this
-            }
-            else {
+                selectedProfileSubscription = this
+            } else {
                 itemView.isSelected = false
                 if (selectedProfileSubscription === this) {
                     selectedProfileSubscription = null
                 }
             }
 
-            val subscriptionProfileList=ArrayList<String>()
-            ProfileManager.getSubscription(item.id)?.forEach{
-                subscriptionProfileList.add(it.name?:it.host)
+            val subscriptionProfileList = ArrayList<String>()
+            ProfileManager.getSubscription(item.id)?.forEach {
+                subscriptionProfileList.add(it.name ?: it.host)
             }
-            if(subscriptionProfileList.isEmpty()){
+            if (subscriptionProfileList.isEmpty()) {
 //todo when empty,delete itself
             }
-            val subscriptionAdapter=ArrayAdapter<String> (context,android.R.layout.simple_spinner_item,subscriptionProfileList)
+            val subscriptionAdapter = ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, subscriptionProfileList)
             subscriptionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item)
-            serverDroplist.adapter=subscriptionAdapter
-            val selectionIndex=subscriptionProfileList.indexOfFirst {
-                it==selectedProfile.name
+            serverDroplist.adapter = subscriptionAdapter
+            val selectionIndex = subscriptionProfileList.indexOfFirst {
+                it == selectedProfile.name
             }
             serverDroplist.setSelection(selectionIndex)
         }
 
-        private fun updateProfiles(){
-            profiles= ProfileManager.getAllProfilesWithSubscription()?.toMutableList() ?: mutableListOf()
+        private fun updateProfiles() {
+            profiles = ProfileManager.getAllProfilesWithSubscription()?.toMutableList() ?: mutableListOf()
         }
     }
 
-    inner class ProfileSubscriptionsAdapter:RecyclerView.Adapter<ProfileSubscriptionViewHolder>(){
-        internal val subscriptions = SubscriptionManager.getAllSubscriptions()?.toMutableList() ?: mutableListOf()
+    inner class ProfileSubscriptionsAdapter : RecyclerView.Adapter<ProfileSubscriptionViewHolder>() {
+        internal val subscriptions = SubscriptionManager.getAllSubscriptions()?.toMutableList()
+                ?: mutableListOf()
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProfileSubscriptionViewHolder = ProfileSubscriptionViewHolder(
                 LayoutInflater.from(parent.context).inflate(R.layout.layout_main_subscription, parent, false))
+
         override fun getItemCount(): Int = subscriptions.size
         override fun getItemId(position: Int): Long = subscriptions[position].id
         override fun onBindViewHolder(holder: ProfileSubscriptionViewHolder, position: Int) = holder.bind(subscriptions[position])
@@ -453,8 +462,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         }
 
         fun remove(pos: Int) {
-            val deleteSubscriptionId=subscriptions[pos].id
-            SubscriptionManager.delSubscription(deleteSubscriptionId)
+            val deleteSubscriptionId = subscriptions[pos].id
+            SubscriptionManager.delSubscriptionWithProfiles(deleteSubscriptionId)
             subscriptions.removeAt(pos)
             notifyItemRemoved(pos)
         }
@@ -462,22 +471,22 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         fun removeSubscriptionId(id: Long) {
             val index = subscriptions.indexOfFirst { it.id == id }
             if (index < 0) return
-            SubscriptionManager.delSubscription(id)
+            SubscriptionManager.delSubscriptionWithProfiles(id)
             subscriptions.removeAt(index)
             notifyItemRemoved(index)
-            if ( id ==ProfileManager.getProfile( DataStore.profileId)?.subscription){
+            if (id == ProfileManager.getProfile(DataStore.profileId)?.subscription) {
                 DataStore.profileId = 0
             }
         }
 
-        fun refreshSubscriptionId(id:Long){
+        fun refreshSubscriptionId(id: Long) {
             val index = subscriptions.indexOfFirst { it.id == id }
             if (index >= 0) notifyItemChanged(index)
         }
 
         fun refreshProfileId(id: Long) {
             val index = subscriptions.indexOfFirst {
-                it.id==ProfileManager.getProfile(id)?.subscription
+                it.id == ProfileManager.getProfile(id)?.subscription
             }
             if (index >= 0) notifyItemChanged(index)
         }
@@ -490,18 +499,17 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         }
     }
 
-    private var selectedProfileSubscription:ProfileSubscriptionViewHolder?=null
+    private var selectedProfileSubscription: ProfileSubscriptionViewHolder? = null
 
-    private class ParseURL:AsyncTask<Unit,Int,String>(){
-        var urlParse=""
-        var parseContext:Context?=null
-        var addSubscriptionsAdapter:ProfileSubscriptionsAdapter?=null
-        override fun doInBackground(vararg params:Unit): String {
-            var urlResult=""
-            try{
-                urlResult= URL(urlParse).readText()
-            }
-            catch (e:Exception){
+    private class ParseURL : AsyncTask<Unit, Int, String>() {
+        var urlParse = ""
+        var parseContext: Context? = null
+        var addSubscriptionsAdapter: ProfileSubscriptionsAdapter? = null
+        override fun doInBackground(vararg params: Unit): String {
+            var urlResult = ""
+            try {
+                urlResult = URL(urlParse).readText()
+            } catch (e: Exception) {
 
             }
             return urlResult
@@ -509,59 +517,68 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
-            if(result.isNullOrBlank()){
-                val messageShow=parseContext?.getString(R.string.message_subscribe_fail)
-                Toast.makeText(parseContext,messageShow,Toast.LENGTH_LONG).show()
+            if (result.isNullOrBlank()) {
+                val messageShow = parseContext?.getString(R.string.message_subscribe_fail)
+                Toast.makeText(parseContext, messageShow, Toast.LENGTH_LONG).show()
                 return
             }
-            val base64Encoded=result?.replace("ssd://","")
-            val base64Decoded= Base64
-                    .decode(base64Encoded, Base64.URL_SAFE)
-                    .toString(Charset.forName("UTF-8"))
-            val jsonObject= JSONObject(base64Decoded)
-            val subscriptionPort=jsonObject.optInt("port",-1)
-            val subscriptionEncryption=jsonObject.optString("encryption","")
-            val subscriptionPassword=jsonObject.optString("password","")
-            val subscriptionTrafficUsed=jsonObject.optDouble("traffic_used",-1.0)
-            val subscriptionTrafficTotal=jsonObject.optDouble("traffic_total",-1.0)
-            var subscriptionExpiry=jsonObject.optString("expiry","")
-            var oldSubscription=SubscriptionManager.getAllSubscriptions()?.firstOrNull{
-                it.url==urlParse
-            }
-            if(oldSubscription!=null){
-                addSubscriptionsAdapter?.removeSubscriptionId(oldSubscription.id)
-            }
-            val newSubscription=SubscriptionManager.createSubscription()
 
-            newSubscription.apply {
-                airport=jsonObject.optString("airport")
-                port=subscriptionPort
-                encryption=subscriptionEncryption
-                password=subscriptionPassword
-                trafficUsed=subscriptionTrafficUsed
-                trafficTotal=subscriptionTrafficTotal
-                expiry=subscriptionExpiry
-                url=jsonObject.optString("url",urlParse)
-                SubscriptionManager.updateSubscription(this)
-            }
-            jsonObject.optJSONArray("servers")?.let {
-                for(index in 0 until it.length()) {
-                    val newProfileJSON= it.optJSONObject(index)
-                    ProfileManager.createSubscriptionProfile().apply {
-                        subscription=newSubscription.id
-                        innerId=newProfileJSON.optInt("id",0)
-                        host=newProfileJSON.optString("server")
-                        name=newProfileJSON.optString("remarks")
-                        ratio=newProfileJSON.optDouble("ratio",-1.0)
+            val newSubscription = SubscriptionManager.createSubscription()
+            try {
+                val base64Encoded = result?.replace("ssd://", "")
+                val base64Decoded = Base64
+                        .decode(base64Encoded, Base64.URL_SAFE)
+                        .toString(Charset.forName("UTF-8"))
+                val jsonObject = JSONObject(base64Decoded)
+                newSubscription.apply {
+                    airport = jsonObject.getString("airport")
+                    port = jsonObject.getInt("port")
+                    encryption = jsonObject.getString("encryption")
+                    password = jsonObject.getString("password")
 
-                        remotePort=newProfileJSON.optInt("port",subscriptionPort)
-                        method=newProfileJSON.optString("encryption",subscriptionEncryption)
-                        password=newProfileJSON.optString("password",subscriptionPassword)
-                        ProfileManager.updateProfile(this)
+                    url = jsonObject.optString("url", urlParse)
+                    trafficUsed = jsonObject.optDouble("traffic_used", -1.0)
+                    trafficTotal = jsonObject.optDouble("traffic_total", -1.0)
+                    expiry = jsonObject.optString("expiry", "")
+                    plugin = jsonObject.optString("plugin", "")
+                    if(plugin=="simple-obfs"){
+                        plugin="obfs-local"
+                        //it's not a good idea
+                    }
+                    pluginOptions = jsonObject.optString("plugin_options", "")
+                }
+                var oldSubscription = SubscriptionManager.getAllSubscriptions()?.firstOrNull {
+                    it.url == urlParse
+                }
+                if (oldSubscription != null) {
+                    addSubscriptionsAdapter?.removeSubscriptionId(oldSubscription.id)
+                }
+                SubscriptionManager.updateSubscription(newSubscription)
+
+                jsonObject.optJSONArray("servers")?.let {
+                    for (index in 0 until it.length()) {
+                        val newProfileJSON = it.optJSONObject(index)
+                        ProfileManager.createSubscriptionProfile().apply {
+                            subscription = newSubscription.id
+                            innerId = newProfileJSON.optInt("id", 0)
+                            host = newProfileJSON.optString("server")
+                            name = newProfileJSON.optString("remarks")
+                            ratio = newProfileJSON.optDouble("ratio", -1.0)
+
+                            remotePort = newProfileJSON.optInt("port", newSubscription.port)
+                            method = newProfileJSON.optString("encryption", newSubscription.encryption)
+                            password = newProfileJSON.optString("password", newSubscription.password)
+                            if (newSubscription.plugin != "") {
+                                plugin = PluginOptions(newSubscription.plugin, newSubscription.pluginOptions).toString(false)
+                            }
+                            ProfileManager.updateProfile(this)
+                        }
                     }
                 }
+                addSubscriptionsAdapter?.add(newSubscription)
+            } catch (e: Exception) {
+                SubscriptionManager.delSubscriptionWithProfiles(newSubscription.id)
             }
-            addSubscriptionsAdapter?.add(newSubscription)
         }
     }
 
@@ -577,13 +594,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             builder = AlertDialog.Builder(activity)
                     .setTitle(R.string.add_subscription)
                     .setNegativeButton(android.R.string.cancel, null)
-                    .setPositiveButton(android.R.string.ok){_,_->
-                        val messageShow=getString(R.string.message_loading_subscription)
-                        Toast.makeText(context,messageShow,Toast.LENGTH_SHORT).show()
+                    .setPositiveButton(android.R.string.ok) { _, _ ->
+                        val messageShow = getString(R.string.message_loading_subscription)
+                        Toast.makeText(context, messageShow, Toast.LENGTH_SHORT).show()
                         ParseURL().apply {
-                            urlParse=editText.text.toString()
-                            parseContext=context
-                            addSubscriptionsAdapter=subscriptionsAdapter
+                            urlParse = editText.text.toString()
+                            parseContext = context
+                            addSubscriptionsAdapter = subscriptionsAdapter
                         }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
                     }
                     .setView(view)
@@ -595,24 +612,22 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         }
     }
 
-    val subscriptionsAdapter by lazy {ProfileSubscriptionsAdapter()}
+    val subscriptionsAdapter by lazy { ProfileSubscriptionsAdapter() }
 
-    fun checkVisible(){
+    fun checkVisible() {
         val profilesList = view?.findViewById<RecyclerView>(R.id.list)
-        val subscriptionsList=view?.findViewById<RecyclerView>(R.id.list_subscription)
-        if(!SubscriptionManager.isNotEmpty()) {
+        val subscriptionsList = view?.findViewById<RecyclerView>(R.id.list_subscription)
+        if (!SubscriptionManager.isNotEmpty()) {
             //if subscription is empty
             subscriptionsList?.visibility = View.GONE
-            profilesList?.visibility=View.VISIBLE
-        }
-        else{
-            subscriptionsList?.visibility=View.VISIBLE
-            if(!ProfileManager.withoutSubscriptionIsNotEmpty()){
+            profilesList?.visibility = View.VISIBLE
+        } else {
+            subscriptionsList?.visibility = View.VISIBLE
+            if (!ProfileManager.withoutSubscriptionIsNotEmpty()) {
                 //if subscription is not empty and profile is empty
-                profilesList?.visibility=View.GONE
-            }
-            else{
-                profilesList?.visibility=View.VISIBLE
+                profilesList?.visibility = View.GONE
+            } else {
+                profilesList?.visibility = View.VISIBLE
             }
         }
     }
@@ -657,10 +672,11 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         instance = this
         undoManager = UndoSnackbarManager(activity as MainActivity, profilesAdapter::undo, profilesAdapter::commit)
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN,
-        ItemTouchHelper.START or ItemTouchHelper.END) {
+                ItemTouchHelper.START or ItemTouchHelper.END) {
             override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
                     if (isProfileEditable((viewHolder as ProfileViewHolder).item.id))
                         super.getSwipeDirs(recyclerView, viewHolder) else 0
+
             override fun getDragDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
                     if (isEnabled) super.getDragDirs(recyclerView, viewHolder) else 0
 
@@ -669,11 +685,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 profilesAdapter.remove(index)
                 undoManager.remove(Pair(index, (viewHolder as ProfileViewHolder).item))
             }
+
             override fun onMove(recyclerView: RecyclerView,
                                 viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
                 profilesAdapter.move(viewHolder.adapterPosition, target.adapterPosition)
                 return true
             }
+
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
                 profilesAdapter.commitMove()
@@ -681,16 +699,16 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         }).attachToRecyclerView(profilesList)
 
         //region SSD
-        val subscriptionsList=view.findViewById<RecyclerView>(R.id.list_subscription)
-        val subscriptionLayoutManager=LinearLayoutManager(context,RecyclerView.VERTICAL,false)
-        subscriptionsList.layoutManager=subscriptionLayoutManager
-        subscriptionsList.addItemDecoration(DividerItemDecoration(context,subscriptionLayoutManager.orientation))
+        val subscriptionsList = view.findViewById<RecyclerView>(R.id.list_subscription)
+        val subscriptionLayoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
+        subscriptionsList.layoutManager = subscriptionLayoutManager
+        subscriptionsList.addItemDecoration(DividerItemDecoration(context, subscriptionLayoutManager.orientation))
         subscriptionLayoutManager.scrollToPosition(subscriptionsAdapter.subscriptions.indexOfFirst {
-            it.id== ProfileManager.getProfile(DataStore.profileId)?.subscription
+            it.id == ProfileManager.getProfile(DataStore.profileId)?.subscription
         })
         val animatorSubscription = DefaultItemAnimator()
-        subscriptionsList.itemAnimator=animatorSubscription
-        subscriptionsList.adapter=subscriptionsAdapter
+        subscriptionsList.itemAnimator = animatorSubscription
+        subscriptionsList.adapter = subscriptionsAdapter
 
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0,
                 ItemTouchHelper.START or ItemTouchHelper.END) {
@@ -698,7 +716,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 val index = viewHolder.adapterPosition
                 subscriptionsAdapter.remove(index)
             }
-            override fun onMove(recyclerView: RecyclerView,viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+
+            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
                 return false
             }
         }).attachToRecyclerView(subscriptionsList)
@@ -742,18 +761,18 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 true
             }
             //region SSD
-            R.id.action_add_subscription->{
+            R.id.action_add_subscription -> {
                 AddSubscriptionDialog().show()
                 true
             }
-            R.id.action_update_subscription->{
-                val messageShow=getString(R.string.message_updating_subscription)
-                Toast.makeText(context,messageShow,Toast.LENGTH_LONG).show()
-                SubscriptionManager.getAllSubscriptions()?.forEach{
+            R.id.action_update_subscription -> {
+                val messageShow = getString(R.string.message_updating_subscription)
+                Toast.makeText(context, messageShow, Toast.LENGTH_LONG).show()
+                SubscriptionManager.getAllSubscriptions()?.forEach {
                     ParseURL().apply {
-                        urlParse=it.url
-                        parseContext=context
-                        addSubscriptionsAdapter=subscriptionsAdapter
+                        urlParse = it.url
+                        parseContext = context
+                        addSubscriptionsAdapter = subscriptionsAdapter
                     }.executeOnExecutor(Executors.newSingleThreadExecutor())
                 }
                 true
@@ -824,6 +843,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             profilesAdapter.refreshId(profileId)
         }
     }
+
     fun onTrafficPersisted(profileId: Long) {
         txTotal = 0
         rxTotal = 0

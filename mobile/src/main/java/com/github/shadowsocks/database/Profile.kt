@@ -132,6 +132,7 @@ class Profile : Serializable {
                     }
                     udpdns = json.optBoolean("udpdns", udpdns)
                     //region SSD
+                    //todo : to url
                     subscription=json.optLong("subscription")
                     //endregion
                 })

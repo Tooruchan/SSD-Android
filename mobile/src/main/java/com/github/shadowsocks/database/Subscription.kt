@@ -5,19 +5,23 @@ import java.io.Serializable
 import java.util.*
 
 @Entity
-class Subscription: Serializable {
+class Subscription : Serializable {
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0
-    var airport:String=""
-    var port:Int=-1
-    var encryption:String=""
-    var password:String=""
+    var airport: String = ""
+    var port: Int = -1
+    var encryption: String = ""
+    var password: String = ""
 
-    var trafficUsed:Double=-1.0
-    var trafficTotal:Double=-1.0
-    var expiry:String=""
-    var url:String=""
-    var selectedProfileId:Long=0
+    var trafficUsed: Double = -1.0
+    var trafficTotal: Double = -1.0
+    var expiry: String = ""
+    var url: String = ""
+
+    var plugin: String = ""
+    var pluginOptions: String = ""
+
+    var selectedProfileId: Long = 0
 
     @androidx.room.Dao
     interface Dao {

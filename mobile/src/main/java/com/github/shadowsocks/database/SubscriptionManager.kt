@@ -36,7 +36,7 @@ object SubscriptionManager {
     }
 
     @Throws(SQLException::class)
-    fun delSubscription(id: Long) {
+    fun delSubscriptionWithProfiles(id: Long) {
         check(PrivateDatabase.subscriptionDao.delete(id) == 1)
         PrivateDatabase.profileDao.deleteSubscription(id)
         //ProfilesFragment.instance?.subscriptionsAdapter?.removeSubscriptionId(id)
