@@ -11,7 +11,7 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         android:scrollbars="vertical">
-        <com.github.shadowsocksd.widget.AutoCollapseTextView
+        <com.github.shadowsocks.widget.AutoCollapseTextView
             android:id="@+id/tv_about"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
