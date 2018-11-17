@@ -430,7 +430,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 //todo when empty,delete itself
             }
             val subscriptionAdapter = ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, subscriptionProfileList)
-            subscriptionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item)
+            subscriptionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             serverDroplist.adapter = subscriptionAdapter
             val selectionIndex = subscriptionProfileList.indexOfFirst {
                 it == selectedProfile.name
