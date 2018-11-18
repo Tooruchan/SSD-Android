@@ -23,6 +23,7 @@ package com.github.shadowsocks.database
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.github.shadowsocks.App.Companion.app
 import com.github.shadowsocks.database.migration.RecreateSchemaMigration
@@ -30,14 +31,15 @@ import com.github.shadowsocks.utils.Key
 
 //todo ssd: handle ssd upgrade
 //region SSD
-@Database(entities = [Profile::class, KeyValuePair::class,Subscription::class], version = 26)
+@Database(entities = [Profile::class, KeyValuePair::class, Subscription::class], version = 27)
 //endregion
 abstract class PrivateDatabase : RoomDatabase() {
     companion object {
         private val instance by lazy {
             Room.databaseBuilder(app, PrivateDatabase::class.java, Key.DB_PROFILE)
+                    .addMigrations(Migration26)
                     .addMigrations(
-                            Migration26
+                            Migration27
                     )
                     .fallbackToDestructiveMigration()
                     .allowMainThreadQueries()
@@ -47,14 +49,45 @@ abstract class PrivateDatabase : RoomDatabase() {
         val profileDao get() = instance.profileDao()
         val kvPairDao get() = instance.keyValuePairDao()
         //region SSD
-        val subscriptionDao get()= instance.subscriptionDao()
+        val subscriptionDao get() = instance.subscriptionDao()
         //endregion
     }
+
     abstract fun profileDao(): Profile.Dao
     abstract fun keyValuePairDao(): KeyValuePair.Dao
     //region SSD
     abstract fun subscriptionDao(): Subscription.Dao
     //endregion
+
+    private object Migration27 : Migration(26, 27) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL("CREATE TABLE `tmp` " +
+                    "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`airport` TEXT NOT NULL, " +
+                    "`port` INTEGER NOT NULL, " +
+                    "`encryption` TEXT NOT NULL, " +
+                    "`password` TEXT NOT NULL, " +
+                    "`trafficUsed` REAL NOT NULL, " +
+                    "`trafficTotal` REAL NOT NULL, " +
+                    "`expiry` TEXT NOT NULL, " +
+                    "`url` TEXT NOT NULL, " +
+                    "`plugin` TEXT NOT NULL, " +
+                    "`pluginOptions` TEXT NOT NULL, " +
+                    "`selectedProfileId` INTEGER NOT NULL," +
+                    "`proxy` INTEGER NOT NULL)")
+            database.execSQL("INSERT INTO `tmp` " +
+                    "(`id`, `airport`, `port`, `encryption`, `password`, " +
+                    "`trafficUsed`, `trafficTotal`, `expiry`, `url`, " +
+                    "`plugin`, `pluginOptions`, `selectedProfileId`,`proxy`) " +
+                    " SELECT " +
+                    "`id`, `airport`, `port`, `encryption`, `password`, " +
+                    "`trafficUsed`, `trafficTotal`, `expiry`, `url`, " +
+                    "`plugin`, `pluginOptions`, `selectedProfileId`, 0 as proxy " +
+                    " FROM `Subscription`")
+            database.execSQL("DROP TABLE `Subscription`")
+            database.execSQL("ALTER TABLE `tmp` RENAME TO `Subscription`")
+        }
+    }
 
     private object Migration26 : RecreateSchemaMigration(25, 26, "Profile",
             //region SSD
@@ -66,8 +99,8 @@ abstract class PrivateDatabase : RoomDatabase() {
         override fun migrate(database: SupportSQLiteDatabase) {
             super.migrate(database)
             //region SSD
-            val migration5=RecreateSchemaMigration(
-                    4,5,
+            val migration5 = RecreateSchemaMigration(
+                    4, 5,
                     "Subscription",
                     "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                             "`airport` TEXT, " +
@@ -77,12 +110,12 @@ abstract class PrivateDatabase : RoomDatabase() {
                             "`traffic_used` REAL NOT NULL, " +
                             "`traffic_total` REAL NOT NULL, " +
                             "`expiry` TEXT NOT NULL, " +
-                            "`url` TEXT NOT NULL, "+
-                            "`plugin` TEXT NOT NULL, "+
-                            "`plugin_options` TEXT NOT NULL, "+
+                            "`url` TEXT NOT NULL, " +
+                            "`plugin` TEXT NOT NULL, " +
+                            "`plugin_options` TEXT NOT NULL, " +
                             "`proxy` INTEGER NOT NULL)",
-                    "`id`, `airport`, `port`, `encryption`, `password`, "+
-                            "`traffic_used`, `traffic_total`, `expiry`, `url`, "+
+                    "`id`, `airport`, `port`, `encryption`, `password`, " +
+                            "`traffic_used`, `traffic_total`, `expiry`, `url`, " +
                             "`plugin`, `plugin_options`, `proxy`")
             migration5.migrate(database)
             //endregion
