@@ -6,6 +6,7 @@
     <string name="update_subscription">更新订阅</string>
     <string name="message_update_must">当前SSD版本已过期</string>
     <string name="message_subscribe_fail">订阅失败</string>
+    <string name="message_subscribe_success">订阅成功</string>
     <string name="message_loading_subscription">订阅加载中&#8230;</string>
     <string name="message_updating_subscription">订阅更新中&#8230;</string>
     <string name="message_virus_detected">SSD无法运行于安装有 %s 的设备</string>

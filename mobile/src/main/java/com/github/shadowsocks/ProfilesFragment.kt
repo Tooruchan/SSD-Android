@@ -31,6 +31,7 @@ import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.os.AsyncTask
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.text.format.Formatter
 import android.util.Base64
 import android.view.*
@@ -360,9 +361,15 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     }
                     item.selectedProfileId = selectedProfile.id
                     SubscriptionManager.updateSubscription(item)
-                    if (selectedProfileSubscription == this@ProfileSubscriptionViewHolder) {
+
+                    if (ProfileManager.getProfile(DataStore.profileId)!!.subscription==item.id&&
+                            DataStore.profileId!=item.selectedProfileId) {
                         val activity = activity as MainActivity
+                        val oldProfile = DataStore.profileId
                         app.switchProfile(item.selectedProfileId)
+                        profilesAdapter.refreshId(oldProfile)
+                        subscriptionsAdapter.refreshProfileId(oldProfile)
+                        //when refresh, it will call SELECTED again
                         itemView.isSelected = true
                         if (activity.state == BaseService.CONNECTED) {
                             app.reloadService()
@@ -391,7 +398,17 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             val expiryDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(item.expiry)
             val expiryDays = TimeUnit.DAYS.convert(expiryDate.time - Calendar.getInstance().time.time, TimeUnit.MILLISECONDS)
             expiry.text = getString(R.string.subscription_expiry).format(item.expiry, expiryDays)
-            edit.alpha = 1F
+
+            var editable = true
+            ProfileManager.getSubscription(item.id)?.forEach {
+                if(!isProfileEditable(it.id)){
+                    editable=false
+                    return@forEach
+                }
+            }
+            edit.isEnabled = editable
+            edit.alpha =if(editable) 1F else .5F
+
             var selectedProfile = ProfileManager.getProfile(item.selectedProfileId)
             if (selectedProfile == null || selectedProfile.subscription != item.id) {
                 selectedProfile = profiles.first {
@@ -400,7 +417,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 item.selectedProfileId = selectedProfile.id
                 SubscriptionManager.updateSubscription(item)
             }
-            var tx = selectedProfile.tx
+
+            var tx =selectedProfile.tx
             var rx = selectedProfile.rx
             if (item.id == bandwidthProfile) {
                 tx += txTotal
@@ -411,7 +429,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             traffic.text = if (tx <= 0 && rx <= 0) null else getString(R.string.traffic,
                     Formatter.formatFileSize(context, tx), Formatter.formatFileSize(context, rx))
 
-            if (selectedProfile.id == DataStore.profileId) {
+            if (ProfileManager.getProfile(DataStore.profileId)!!.subscription==item.id) {
                 itemView.isSelected = true
                 selectedItem = null
                 selectedProfileSubscription = this
@@ -541,16 +559,20 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     trafficTotal = jsonObject.optDouble("traffic_total", -1.0)
                     expiry = jsonObject.optString("expiry", "")
                     plugin = jsonObject.optString("plugin", "")
-                    if(plugin=="simple-obfs"){
-                        plugin="obfs-local"
+                    if (plugin == "simple-obfs") {
+                        plugin = "obfs-local"
                         //it's not a good idea
                     }
                     pluginOptions = jsonObject.optString("plugin_options", "")
                 }
-                var oldSubscription = SubscriptionManager.getAllSubscriptions()?.firstOrNull {
+
+                val oldSubscription = SubscriptionManager.getAllSubscriptions()?.firstOrNull {
                     it.url == urlParse
                 }
+
+                var oldServers = listOf<Profile>()
                 if (oldSubscription != null) {
+                    oldServers = ProfileManager.getSubscription(oldSubscription.id) ?: emptyList()
                     addSubscriptionsAdapter?.removeSubscriptionId(oldSubscription.id)
                 }
                 SubscriptionManager.updateSubscription(newSubscription)
@@ -571,11 +593,28 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                             if (newSubscription.plugin != "") {
                                 plugin = PluginOptions(newSubscription.plugin, newSubscription.pluginOptions).toString(false)
                             }
+
+                            val oldServer = oldServers.firstOrNull {
+                                it.innerId == innerId
+                            }
+                            if (oldServer != null) {
+                                route = oldServer.route
+                                remoteDns = oldServer.remoteDns
+                                proxyApps = oldServer.proxyApps
+                                bypass = oldServer.bypass
+                                udpdns = oldServer.udpdns
+                                ipv6=oldServer.ipv6
+                                individual=oldServer.individual
+                                //is there a good way to simplify it?
+                            }
+
                             ProfileManager.updateProfile(this)
                         }
                     }
                 }
                 addSubscriptionsAdapter?.add(newSubscription)
+                val messageShow = parseContext?.getString(R.string.message_subscribe_success)
+                Toast.makeText(parseContext, messageShow, Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
                 SubscriptionManager.delSubscriptionWithProfiles(newSubscription.id)
             }
@@ -841,6 +880,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             this.txTotal = txTotal
             this.rxTotal = rxTotal
             profilesAdapter.refreshId(profileId)
+            //todo: support subscription
         }
     }
 

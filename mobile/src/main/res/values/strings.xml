@@ -6,6 +6,7 @@
   <string name="update_subscription">Update Subscription</string>
   <string name="message_update_must">Current version of SSD is out of date</string>
   <string name="message_subscribe_fail">Subscribe fail</string>
+  <string name="message_subscribe_success">Subscribe success</string>
   <string name="message_loading_subscription">Loading subscription&#8230;</string>
   <string name="message_updating_subscription">Updating subscription&#8230;</string>
   <string name="message_virus_detected">SSD cannot run in the device that installed %s</string>
