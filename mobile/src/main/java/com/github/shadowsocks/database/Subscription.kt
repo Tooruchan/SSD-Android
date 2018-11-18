@@ -21,6 +21,7 @@ class Subscription : Serializable {
     var pluginOptions: String = ""
 
     var selectedProfileId: Long = 0
+    var proxy=false
 
     @androidx.room.Dao
     interface Dao {

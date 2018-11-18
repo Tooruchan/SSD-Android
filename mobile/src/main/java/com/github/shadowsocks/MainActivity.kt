@@ -130,6 +130,9 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface, OnPre
         if (msg != null) snackbar(getString(R.string.vpn_error).format(Locale.ENGLISH, msg)).show()
         this.state = state
         ProfilesFragment.instance?.profilesAdapter?.notifyDataSetChanged()  // refresh button enabled state
+        //region SSD
+        ProfilesFragment.instance?.subscriptionsAdapter?.notifyDataSetChanged()
+        //endregion
         stateListener?.invoke(state)
     }
 

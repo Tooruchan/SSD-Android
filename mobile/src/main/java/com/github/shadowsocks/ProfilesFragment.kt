@@ -362,7 +362,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     item.selectedProfileId = selectedProfile.id
                     SubscriptionManager.updateSubscription(item)
 
-                    if (ProfileManager.getProfile(DataStore.profileId)!!.subscription==item.id&&
+                    if (ProfileManager.getProfile(DataStore.profileId)?.subscription==item.id&&
                             DataStore.profileId!=item.selectedProfileId) {
                         val activity = activity as MainActivity
                         val oldProfile = DataStore.profileId
@@ -429,7 +429,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             traffic.text = if (tx <= 0 && rx <= 0) null else getString(R.string.traffic,
                     Formatter.formatFileSize(context, tx), Formatter.formatFileSize(context, rx))
 
-            if (ProfileManager.getProfile(DataStore.profileId)!!.subscription==item.id) {
+            if (ProfileManager.getProfile(DataStore.profileId)?.subscription==item.id) {
                 itemView.isSelected = true
                 selectedItem = null
                 selectedProfileSubscription = this
@@ -445,7 +445,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 subscriptionProfileList.add(it.name ?: it.host)
             }
             if (subscriptionProfileList.isEmpty()) {
-//todo when empty,delete itself
+//todo ssd: check again ,when empty,delete itself
             }
             val subscriptionAdapter = ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, subscriptionProfileList)
             subscriptionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)

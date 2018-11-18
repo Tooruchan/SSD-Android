@@ -28,6 +28,7 @@ import com.github.shadowsocks.App.Companion.app
 import com.github.shadowsocks.database.migration.RecreateSchemaMigration
 import com.github.shadowsocks.utils.Key
 
+//todo ssd: handle ssd upgrade
 //region SSD
 @Database(entities = [Profile::class, KeyValuePair::class,Subscription::class], version = 26)
 //endregion
@@ -65,8 +66,8 @@ abstract class PrivateDatabase : RoomDatabase() {
         override fun migrate(database: SupportSQLiteDatabase) {
             super.migrate(database)
             //region SSD
-            val migration4=RecreateSchemaMigration(
-                    3,4,
+            val migration5=RecreateSchemaMigration(
+                    4,5,
                     "Subscription",
                     "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                             "`airport` TEXT, " +
@@ -78,11 +79,12 @@ abstract class PrivateDatabase : RoomDatabase() {
                             "`expiry` TEXT NOT NULL, " +
                             "`url` TEXT NOT NULL, "+
                             "`plugin` TEXT NOT NULL, "+
-                            "`plugin_options` TEXT NOT NULL)",
+                            "`plugin_options` TEXT NOT NULL, "+
+                            "`proxy` INTEGER NOT NULL)",
                     "`id`, `airport`, `port`, `encryption`, `password`, "+
                             "`traffic_used`, `traffic_total`, `expiry`, `url`, "+
-                            "`plugin`, `plugin_options`")
-            migration4.migrate(database)
+                            "`plugin`, `plugin_options`, `proxy`")
+            migration5.migrate(database)
             //endregion
             PublicDatabase.Migration3.migrate(database)
         }

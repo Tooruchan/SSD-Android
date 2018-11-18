@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 26,
-    "identityHash": "35b96fe1f1da3d106bfd664f66f3e297",
+    "identityHash": "55a561d6844af8df007e6455021f314a",
     "entities": [
       {
         "tableName": "Profile",
@@ -172,7 +172,7 @@
       },
       {
         "tableName": "Subscription",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `airport` TEXT NOT NULL, `port` INTEGER NOT NULL, `encryption` TEXT NOT NULL, `password` TEXT NOT NULL, `trafficUsed` REAL NOT NULL, `trafficTotal` REAL NOT NULL, `expiry` TEXT NOT NULL, `url` TEXT NOT NULL, `plugin` TEXT NOT NULL, `pluginOptions` TEXT NOT NULL, `selectedProfileId` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `airport` TEXT NOT NULL, `port` INTEGER NOT NULL, `encryption` TEXT NOT NULL, `password` TEXT NOT NULL, `trafficUsed` REAL NOT NULL, `trafficTotal` REAL NOT NULL, `expiry` TEXT NOT NULL, `url` TEXT NOT NULL, `plugin` TEXT NOT NULL, `pluginOptions` TEXT NOT NULL, `selectedProfileId` INTEGER NOT NULL, `proxy` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -245,6 +245,12 @@
             "columnName": "selectedProfileId",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "proxy",
+            "columnName": "proxy",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -259,7 +265,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"35b96fe1f1da3d106bfd664f66f3e297\")"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"55a561d6844af8df007e6455021f314a\")"
     ]
   }
 }
