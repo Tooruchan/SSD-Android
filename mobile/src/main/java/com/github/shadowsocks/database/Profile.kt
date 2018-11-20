@@ -48,7 +48,8 @@ class Profile : Serializable {
         private val userInfoPattern = "^(.+?):(.*)$".toRegex()
         private val legacyPattern = "^(.+?):(.*)@(.+?):(\\d+?)$".toRegex()
 
-        fun findAllUrls(data: CharSequence?, feature: Profile? = null) = pattern.findAll(data ?: "").map {
+        fun findAllUrls(data: CharSequence?, feature: Profile? = null) = pattern.findAll(data
+                ?: "").map {
             val uri = it.value.toUri()
             try {
                 if (uri.userInfo == null) {
@@ -133,7 +134,7 @@ class Profile : Serializable {
                     udpdns = json.optBoolean("udpdns", udpdns)
                     //region SSD
                     //todo : to url
-                    subscription=json.optLong("subscription")
+                    subscription = json.optLong("subscription")
                     //endregion
                 })
             }
@@ -149,6 +150,7 @@ class Profile : Serializable {
                 }
             }
         }
+
         fun parseJson(json: String, feature: Profile? = null): List<Profile> =
                 JsonParser(feature).apply { process(JSONTokener(json).nextValue()) }
     }
@@ -163,10 +165,10 @@ class Profile : Serializable {
 
         //region SSD
         @Query("SELECT * FROM `Profile` WHERE `subscription` = :subscription")
-        fun getSubscription(subscription:Long):List<Profile>
+        fun getSubscription(subscription: Long): List<Profile>
 
         @Query("DELETE FROM `Profile` WHERE `subscription` = :subscription")
-        fun deleteSubscription(subscription: Long):Int
+        fun deleteSubscription(subscription: Long): Int
 
         @Query("SELECT 1 FROM `Profile`  WHERE `subscription` = 0 LIMIT 1 ")
         fun withoutSubscriptionIsNotEmpty(): Boolean
@@ -208,9 +210,10 @@ class Profile : Serializable {
     var plugin: String? = null
 
     //region SSD
-    var subscription:Long = 0
-    var innerId:Int=0
-    var ratio:Double=-1.0
+    var subscription: Long = 0
+    var innerId: Int = 0
+    var ratio: Double = -1.0
+    var latency: Int = -1
     //endregion
 
     @Ignore // not persisted in db, only used by direct boot
@@ -241,6 +244,7 @@ class Profile : Serializable {
         if (!name.isNullOrEmpty()) builder.fragment(name)
         return builder.build()
     }
+
     override fun toString() = toUri().toString()
 
     fun toJson(compat: Boolean = false) = JSONObject().apply {
@@ -286,6 +290,7 @@ class Profile : Serializable {
         DataStore.plugin = plugin ?: ""
         DataStore.privateStore.remove(Key.dirty)
     }
+
     fun deserialize() {
         // It's assumed that default values are never used, so 0/false/null is always used even if that isn't the case
         name = DataStore.privateStore.getString(Key.name) ?: ""
