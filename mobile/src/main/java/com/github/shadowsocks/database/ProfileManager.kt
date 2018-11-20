@@ -82,7 +82,7 @@ object ProfileManager {
     }
 
     @Throws(IOException::class)
-    fun getAllProfilesWithSubscription(): List<Profile>? = try {
+    fun getAllProfilesWhetherSubscription(): List<Profile>? = try {
         PrivateDatabase.profileDao.list()
     } catch (ex: SQLiteCantOpenDatabaseException) {
         throw IOException(ex)

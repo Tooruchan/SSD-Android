@@ -31,7 +31,6 @@ import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.os.AsyncTask
 import android.os.Bundle
-import android.provider.ContactsContract
 import android.text.format.Formatter
 import android.util.Base64
 import android.view.*
@@ -69,6 +68,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.collections.ArrayList
 
 class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
     companion object {
@@ -331,8 +331,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
     //region SSD
     inner class ProfileSubscriptionViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         internal lateinit var item: Subscription
-        internal var profiles = ProfileManager.getAllProfilesWithSubscription()?.toMutableList()
-                ?: mutableListOf()
+        internal var profiles = emptyList<Profile>()
         private val traffic_usage = itemView.findViewById<TextView>(R.id.text_traffic_usage)
         private val expiry = itemView.findViewById<TextView>(R.id.text_expiry)
         private val text1 = itemView.findViewById<TextView>(R.id.airport_name)
@@ -357,19 +356,19 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                     val selectedProfile = profiles.first {
-                        it.name == serverDroplist.selectedItem.toString()
+                        it.id == (serverDroplist.selectedItem as Profile).id
                     }
                     item.selectedProfileId = selectedProfile.id
                     SubscriptionManager.updateSubscription(item)
 
-                    if (ProfileManager.getProfile(DataStore.profileId)?.subscription==item.id&&
-                            DataStore.profileId!=item.selectedProfileId) {
+                    if (ProfileManager.getProfile(DataStore.profileId)?.subscription == item.id &&
+                            DataStore.profileId != item.selectedProfileId) {
                         val activity = activity as MainActivity
                         val oldProfile = DataStore.profileId
                         app.switchProfile(item.selectedProfileId)
                         profilesAdapter.refreshId(oldProfile)
                         subscriptionsAdapter.refreshProfileId(oldProfile)
-                        //when refresh, it will call SELECTED again
+                        //reloadService() will call onItemSelected() again
                         itemView.isSelected = true
                         if (activity.state == BaseService.CONNECTED) {
                             app.reloadService()
@@ -391,8 +390,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         }
 
         fun bind(item: Subscription) {
-            updateProfiles()
             this.item = item
+            profiles = ProfileManager.getSubscription(item.id)!!
             text1.text = item.airport
             traffic_usage.text = "%.2f / %.2f G".format(item.trafficUsed, item.trafficTotal)
             val expiryDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(item.expiry)
@@ -401,13 +400,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
             var editable = true
             ProfileManager.getSubscription(item.id)?.forEach {
-                if(!isProfileEditable(it.id)){
-                    editable=false
+                if (!isProfileEditable(it.id)) {
+                    editable = false
                     return@forEach
                 }
             }
             edit.isEnabled = editable
-            edit.alpha =if(editable) 1F else .5F
+            edit.alpha = if (editable) 1F else .5F
 
             var selectedProfile = ProfileManager.getProfile(item.selectedProfileId)
             if (selectedProfile == null || selectedProfile.subscription != item.id) {
@@ -418,7 +417,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 SubscriptionManager.updateSubscription(item)
             }
 
-            var tx =selectedProfile.tx
+            var tx = selectedProfile.tx
             var rx = selectedProfile.rx
             if (item.id == bandwidthProfile) {
                 tx += txTotal
@@ -429,7 +428,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             traffic.text = if (tx <= 0 && rx <= 0) null else getString(R.string.traffic,
                     Formatter.formatFileSize(context, tx), Formatter.formatFileSize(context, rx))
 
-            if (ProfileManager.getProfile(DataStore.profileId)?.subscription==item.id) {
+            if (ProfileManager.getProfile(DataStore.profileId)?.subscription == item.id) {
                 itemView.isSelected = true
                 selectedItem = null
                 selectedProfileSubscription = this
@@ -440,24 +439,27 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 }
             }
 
-            val subscriptionProfileList = ArrayList<String>()
-            ProfileManager.getSubscription(item.id)?.forEach {
-                subscriptionProfileList.add(it.name ?: it.host)
+            //todo ssd: check again ,when empty,delete itself
+            //should check in adapter
+            val subscriptionAdapter = object : ArrayAdapter<Profile>(context, android.R.layout.simple_spinner_item, profiles) {
+                override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                    return getDropDownView(position, convertView, parent)
+                }
+
+                override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                    val itemView: TextView = super.getDropDownView(position, convertView, parent) as TextView
+                    val viewItem = getItem(position)!!
+                    val viewText = "[x" + viewItem.ratio + "] " + viewItem.name
+                    itemView.setText(viewText)
+                    return itemView
+                }
             }
-            if (subscriptionProfileList.isEmpty()) {
-//todo ssd: check again ,when empty,delete itself
-            }
-            val subscriptionAdapter = ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, subscriptionProfileList)
             subscriptionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             serverDroplist.adapter = subscriptionAdapter
-            val selectionIndex = subscriptionProfileList.indexOfFirst {
-                it == selectedProfile.name
+            val selectionIndex = profiles.indexOfFirst {
+                it.id == selectedProfile.id
             }
             serverDroplist.setSelection(selectionIndex)
-        }
-
-        private fun updateProfiles() {
-            profiles = ProfileManager.getAllProfilesWithSubscription()?.toMutableList() ?: mutableListOf()
         }
     }
 
@@ -603,8 +605,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                                 proxyApps = oldServer.proxyApps
                                 bypass = oldServer.bypass
                                 udpdns = oldServer.udpdns
-                                ipv6=oldServer.ipv6
-                                individual=oldServer.individual
+                                ipv6 = oldServer.ipv6
+                                individual = oldServer.individual
                                 //is there a good way to simplify it?
                             }
 
