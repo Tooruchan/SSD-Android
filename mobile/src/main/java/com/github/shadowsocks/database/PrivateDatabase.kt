@@ -29,18 +29,17 @@ import com.github.shadowsocks.App.Companion.app
 import com.github.shadowsocks.database.migration.RecreateSchemaMigration
 import com.github.shadowsocks.utils.Key
 
-//todo ssd: handle ssd upgrade
 //region SSD
-@Database(entities = [Profile::class, KeyValuePair::class, Subscription::class], version = 27)
+@Database(entities = [Profile::class, KeyValuePair::class, Subscription::class], version = 26 + 1)
 //endregion
 abstract class PrivateDatabase : RoomDatabase() {
     companion object {
         private val instance by lazy {
             Room.databaseBuilder(app, PrivateDatabase::class.java, Key.DB_PROFILE)
                     .addMigrations(Migration26)
-                    .addMigrations(
-                            Migration27
-                    )
+                    //region SSD
+                    .addMigrations(MigrationSSD1)
+                    //endregion
                     .fallbackToDestructiveMigration()
                     .allowMainThreadQueries()
                     .build()
@@ -53,14 +52,15 @@ abstract class PrivateDatabase : RoomDatabase() {
         //endregion
     }
 
-    abstract fun profileDao(): Profile.Dao
-    abstract fun keyValuePairDao(): KeyValuePair.Dao
     //region SSD
     abstract fun subscriptionDao(): Subscription.Dao
-    //endregion
 
-    private object Migration27 : Migration(26, 27) {
+    private object MigrationSSD1 : Migration(26, 27) {
         override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL("ALTER TABLE `Profile` ADD `subscription` INTEGER NOT NULL DEFAULT 0")
+            database.execSQL("ALTER TABLE `Profile` ADD `inner_id` INTEGER NOT NULL DEFAULT 0")
+            database.execSQL("ALTER TABLE `Profile` ADD `ratio` REAL NOT NULL DEFAULT -1.0")
+            database.execSQL("ALTER TABLE `Profile` ADD `latency` INTEGER NOT NULL DEFAULT -1")
             database.execSQL("CREATE TABLE `tmp` " +
                     "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                     "`airport` TEXT NOT NULL, " +
@@ -88,37 +88,16 @@ abstract class PrivateDatabase : RoomDatabase() {
             database.execSQL("ALTER TABLE `tmp` RENAME TO `Subscription`")
         }
     }
+    //endregion
+
+    abstract fun profileDao(): Profile.Dao
+    abstract fun keyValuePairDao(): KeyValuePair.Dao
 
     private object Migration26 : RecreateSchemaMigration(25, 26, "Profile",
-            //region SSD
-            //schema: `subscription` INTEGER NOT NULL, `inner_id` INTEGER, `ratio` REAL NOT NULL
-            //keys: `subscription`, ``inner_id`, ratio`
-            //endregion
-            "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `host` TEXT NOT NULL, `remotePort` INTEGER NOT NULL, `password` TEXT NOT NULL, `method` TEXT NOT NULL, `route` TEXT NOT NULL, `remoteDns` TEXT NOT NULL, `proxyApps` INTEGER NOT NULL, `bypass` INTEGER NOT NULL, `udpdns` INTEGER NOT NULL, `ipv6` INTEGER NOT NULL, `individual` TEXT NOT NULL, `tx` INTEGER NOT NULL, `rx` INTEGER NOT NULL, `userOrder` INTEGER NOT NULL, `plugin` TEXT, `subscription` INTEGER NOT NULL, `inner_id` INTEGER, `ratio` REAL NOT NULL)",
-            "`id`, `name`, `host`, `remotePort`, `password`, `method`, `route`, `remoteDns`, `proxyApps`, `bypass`, `udpdns`, `ipv6`, `individual`, `tx`, `rx`, `userOrder`, `plugin`, `subscription`, `inner_id`, `ratio`") {
+            "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `host` TEXT NOT NULL, `remotePort` INTEGER NOT NULL, `password` TEXT NOT NULL, `method` TEXT NOT NULL, `route` TEXT NOT NULL, `remoteDns` TEXT NOT NULL, `proxyApps` INTEGER NOT NULL, `bypass` INTEGER NOT NULL, `udpdns` INTEGER NOT NULL, `ipv6` INTEGER NOT NULL, `individual` TEXT NOT NULL, `tx` INTEGER NOT NULL, `rx` INTEGER NOT NULL, `userOrder` INTEGER NOT NULL, `plugin` TEXT)",
+            "`id`, `name`, `host`, `remotePort`, `password`, `method`, `route`, `remoteDns`, `proxyApps`, `bypass`, `udpdns`, `ipv6`, `individual`, `tx`, `rx`, `userOrder`, `plugin`") {
         override fun migrate(database: SupportSQLiteDatabase) {
             super.migrate(database)
-            //region SSD
-            val migration5 = RecreateSchemaMigration(
-                    4, 5,
-                    "Subscription",
-                    "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                            "`airport` TEXT, " +
-                            "`port` INTEGER NOT NULL, " +
-                            "`encryption` TEXT NOT NULL, " +
-                            "`password` TEXT NOT NULL, " +
-                            "`traffic_used` REAL NOT NULL, " +
-                            "`traffic_total` REAL NOT NULL, " +
-                            "`expiry` TEXT NOT NULL, " +
-                            "`url` TEXT NOT NULL, " +
-                            "`plugin` TEXT NOT NULL, " +
-                            "`plugin_options` TEXT NOT NULL, " +
-                            "`proxy` INTEGER NOT NULL)",
-                    "`id`, `airport`, `port`, `encryption`, `password`, " +
-                            "`traffic_used`, `traffic_total`, `expiry`, `url`, " +
-                            "`plugin`, `plugin_options`, `proxy`")
-            migration5.migrate(database)
-            //endregion
             PublicDatabase.Migration3.migrate(database)
         }
     }
