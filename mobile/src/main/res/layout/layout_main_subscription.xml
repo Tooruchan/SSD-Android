@@ -11,6 +11,10 @@
     android:focusable="true"
     android:nextFocusRight="@+id/edit"
     android:orientation="vertical">
+    <!-- SSD -->
+    <!-- add: -->
+    <!-- android:layout_marginTop="8dp" -->
+    <!-- DSS -->
     <LinearLayout
         android:id="@+id/container"
         android:layout_width="match_parent"
