@@ -11,6 +11,8 @@
     <string name="message_updating_subscription">订阅更新中&#8230;</string>
     <string name="message_virus_detected">SSD无法运行于安装有 %s 的设备</string>
     <string name="subscription_expiry">%s %d天</string>
+    <string name="title_common_profiles">普通配置</string>
+    <string name="title_subscription_profiles">订阅配置</string>
     <!-- DSS -->
 
 <string name="quick_toggle">"开关"</string>

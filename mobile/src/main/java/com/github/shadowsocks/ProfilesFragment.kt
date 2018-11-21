@@ -329,6 +329,67 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
     }
 
     //region SSD
+    inner class DynamicLinearLayoutManager : LinearLayoutManager {
+        private val mMeasuredDimension = IntArray(2)
+
+        constructor(context: Context?) : super(context)
+        constructor(context: Context?, orientation: Int, reverseLayout: Boolean) : super(context, orientation, reverseLayout)
+
+
+        override fun onMeasure(recycler: RecyclerView.Recycler, state: RecyclerView.State, widthSpec: Int, heightSpec: Int) {
+            val widthMode = View.MeasureSpec.getMode(widthSpec)
+            val heightMode = View.MeasureSpec.getMode(heightSpec)
+            val widthSize = View.MeasureSpec.getSize(widthSpec)
+            val heightSize = View.MeasureSpec.getSize(heightSpec)
+            var width = 0
+            var height = 0
+
+            for (i in 0 until itemCount) {
+                try {
+                    measureScrapChild(recycler, i,
+                            widthSpec,
+                            View.MeasureSpec.makeMeasureSpec(i, View.MeasureSpec.UNSPECIFIED),
+                            mMeasuredDimension)
+                } catch (e: IndexOutOfBoundsException) {
+                    e.printStackTrace()
+                }
+
+                if (orientation === HORIZONTAL) {
+                    width += mMeasuredDimension[0]
+                    if (i == 0) {
+                        height = mMeasuredDimension[1]
+                    }
+                } else {
+                    height += mMeasuredDimension[1]
+                    if (i == 0) {
+                        width = mMeasuredDimension[0]
+                    }
+                }
+            }
+
+
+            when (heightMode) {
+                View.MeasureSpec.EXACTLY -> height = heightSize
+            }
+            setMeasuredDimension(widthSpec, height)
+        }
+
+        private fun measureScrapChild(recycler: RecyclerView.Recycler, position: Int, widthSpec: Int, heightSpec: Int, measuredDimension: IntArray) {
+            val view = recycler.getViewForPosition(position)
+
+            if (view != null) {
+                val p = view.layoutParams as RecyclerView.LayoutParams
+                val childHeightSpec = ViewGroup.getChildMeasureSpec(heightSpec,
+                        paddingTop + paddingBottom, p.height)
+                view.measure(widthSpec, childHeightSpec)
+                measuredDimension[0] = view.measuredWidth + p.leftMargin + p.rightMargin
+                measuredDimension[1] = view.measuredHeight + p.bottomMargin + p.topMargin
+                recycler.recycleView(view)
+            }
+        }
+
+    }
+
     inner class ProfileSubscriptionViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         internal lateinit var item: Subscription
         internal var profiles = emptyList<Profile>()
@@ -530,7 +591,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             try {
                 urlResult = URL(urlParse).readText()
             } catch (e: Exception) {
-
+                printLog(e)
             }
             return urlResult
         }
@@ -701,6 +762,9 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
         if (!ProfileManager.isNotEmpty()) DataStore.profileId = ProfileManager.createProfile().id
         val profilesList = view.findViewById<RecyclerView>(R.id.list)
+        //region SSD
+        profilesList.setHasFixedSize(true)
+        //endregion
         val layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
         profilesList.layoutManager = layoutManager
         profilesList.addItemDecoration(DividerItemDecoration(context, layoutManager.orientation))
@@ -741,7 +805,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
         //region SSD
         val subscriptionsList = view.findViewById<RecyclerView>(R.id.list_subscription)
-        val subscriptionLayoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
+        subscriptionsList.setHasFixedSize(true)
+        val subscriptionLayoutManager = DynamicLinearLayoutManager(context, RecyclerView.VERTICAL, false)
         subscriptionsList.layoutManager = subscriptionLayoutManager
         subscriptionsList.addItemDecoration(DividerItemDecoration(context, subscriptionLayoutManager.orientation))
         subscriptionLayoutManager.scrollToPosition(subscriptionsAdapter.subscriptions.indexOfFirst {
