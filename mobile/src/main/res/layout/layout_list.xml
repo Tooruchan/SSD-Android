@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SSD -->
+<!-- add: -->
+<!-- android:id="@+id/rootView" -->
+<!-- DSS -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rootView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-
     <include layout="@layout/toolbar_light_dark" />
+    
     <!-- SSD -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollview"
@@ -58,6 +62,14 @@
 
             <!-- DSS -->
 
+            <!-- SSD -->
+            <!-- remove: -->
+            <!-- android:layout_weight="1" -->
+            <!-- change: -->
+            <!-- android:layout_height="wrap_content" -->
+            <!-- add: -->
+            <!-- android:nestedScrollingEnabled="false" -->
+            <!-- DSS -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/list"
                 android:layout_width="match_parent"
