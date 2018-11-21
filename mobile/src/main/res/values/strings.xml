@@ -11,6 +11,8 @@
   <string name="message_updating_subscription">Updating subscription&#8230;</string>
   <string name="message_virus_detected">SSD cannot run in the device that installed %s</string>
   <string name="subscription_expiry">%s %dd</string>
+  <string name="title_subscription_profiles">Subscription profile(s)</string>
+  <string name="title_common_profiles">Common profile(s)</string>
   <!-- DSS -->
 
   <string name="app_name">ShadowsocksD</string>
