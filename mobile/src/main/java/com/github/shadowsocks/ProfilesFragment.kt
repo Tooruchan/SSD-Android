@@ -718,18 +718,25 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
     fun checkVisible() {
         val profilesList = view?.findViewById<RecyclerView>(R.id.list)
+        val profileTitle = view?.findViewById<TextView>(R.id.tv_title_common_profile)
         val subscriptionsList = view?.findViewById<RecyclerView>(R.id.list_subscription)
+        val subscritionTitle = view?.findViewById<TextView>(R.id.tv_title_subscription)
         if (!SubscriptionManager.isNotEmpty()) {
             //if subscription is empty
             subscriptionsList?.visibility = View.GONE
+            subscritionTitle?.visibility = View.GONE
             profilesList?.visibility = View.VISIBLE
+            profileTitle?.visibility =View.VISIBLE
         } else {
             subscriptionsList?.visibility = View.VISIBLE
+            subscritionTitle?.visibility = View.VISIBLE
             if (!ProfileManager.withoutSubscriptionIsNotEmpty()) {
                 //if subscription is not empty and profile is empty
                 profilesList?.visibility = View.GONE
+                profileTitle?.visibility = View.GONE
             } else {
                 profilesList?.visibility = View.VISIBLE
+                profileTitle?.visibility =View.VISIBLE
             }
         }
     }
