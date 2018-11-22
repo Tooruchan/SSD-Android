@@ -335,7 +335,6 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         constructor(context: Context?) : super(context)
         constructor(context: Context?, orientation: Int, reverseLayout: Boolean) : super(context, orientation, reverseLayout)
 
-
         override fun onMeasure(recycler: RecyclerView.Recycler, state: RecyclerView.State, widthSpec: Int, heightSpec: Int) {
             val widthMode = View.MeasureSpec.getMode(widthSpec)
             val heightMode = View.MeasureSpec.getMode(heightSpec)
@@ -354,7 +353,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     e.printStackTrace()
                 }
 
-                if (orientation === HORIZONTAL) {
+                if (orientation == HORIZONTAL) {
                     width += mMeasuredDimension[0]
                     if (i == 0) {
                         height = mMeasuredDimension[1]
@@ -367,7 +366,6 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 }
             }
 
-
             when (heightMode) {
                 View.MeasureSpec.EXACTLY -> height = heightSize
             }
@@ -376,18 +374,14 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
         private fun measureScrapChild(recycler: RecyclerView.Recycler, position: Int, widthSpec: Int, heightSpec: Int, measuredDimension: IntArray) {
             val view = recycler.getViewForPosition(position)
-
-            if (view != null) {
-                val p = view.layoutParams as RecyclerView.LayoutParams
-                val childHeightSpec = ViewGroup.getChildMeasureSpec(heightSpec,
-                        paddingTop + paddingBottom, p.height)
-                view.measure(widthSpec, childHeightSpec)
-                measuredDimension[0] = view.measuredWidth + p.leftMargin + p.rightMargin
-                measuredDimension[1] = view.measuredHeight + p.bottomMargin + p.topMargin
-                recycler.recycleView(view)
-            }
+            val p = view.layoutParams as RecyclerView.LayoutParams
+            val childHeightSpec = ViewGroup.getChildMeasureSpec(heightSpec,
+                    paddingTop + paddingBottom, p.height)
+            view.measure(widthSpec, childHeightSpec)
+            measuredDimension[0] = view.measuredWidth + p.leftMargin + p.rightMargin
+            measuredDimension[1] = view.measuredHeight + p.bottomMargin + p.topMargin
+            recycler.recycleView(view)
         }
-
     }
 
     inner class ProfileSubscriptionViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -454,11 +448,18 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             this.item = item
             profiles = ProfileManager.getSubscription(item.id)!!
             text1.text = item.airport
-            traffic_usage.text = "%.2f / %.2f G".format(item.trafficUsed, item.trafficTotal)
-            val expiryDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(item.expiry)
-            val expiryDays = TimeUnit.DAYS.convert(expiryDate.time - Calendar.getInstance().time.time, TimeUnit.MILLISECONDS)
-            expiry.text = getString(R.string.subscription_expiry).format(item.expiry, expiryDays)
-
+            if (item.trafficUsed >= 0 && item.trafficTotal > 0) {
+                traffic_usage.text = "%.2f / %.2f G".format(item.trafficUsed, item.trafficTotal)
+            } else {
+                traffic_usage.text = "? / ? G"
+            }
+            try {
+                val expiryDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(item.expiry)
+                val expiryDays = TimeUnit.DAYS.convert(expiryDate.time - Calendar.getInstance().time.time, TimeUnit.MILLISECONDS)
+                expiry.text = getString(R.string.subscription_expiry).format(item.expiry, expiryDays)
+            } catch (e: Exception) {
+                expiry.text = "????-??-?? ??:??:??"
+            }
             var editable = true
             ProfileManager.getSubscription(item.id)?.forEach {
                 if (!isProfileEditable(it.id)) {
@@ -679,6 +680,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 val messageShow = parseContext?.getString(R.string.message_subscribe_success)
                 Toast.makeText(parseContext, messageShow, Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
+                val messageShow = parseContext?.getString(R.string.message_subscribe_fail)
+                Toast.makeText(parseContext, messageShow, Toast.LENGTH_LONG).show()
                 SubscriptionManager.delSubscriptionWithProfiles(newSubscription.id)
             }
         }
@@ -726,7 +729,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             subscriptionsList?.visibility = View.GONE
             subscritionTitle?.visibility = View.GONE
             profilesList?.visibility = View.VISIBLE
-            profileTitle?.visibility =View.VISIBLE
+            profileTitle?.visibility = View.VISIBLE
         } else {
             subscriptionsList?.visibility = View.VISIBLE
             subscritionTitle?.visibility = View.VISIBLE
@@ -736,12 +739,12 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 profileTitle?.visibility = View.GONE
             } else {
                 profilesList?.visibility = View.VISIBLE
-                profileTitle?.visibility =View.VISIBLE
+                profileTitle?.visibility = View.VISIBLE
             }
         }
     }
 
-    //endregion
+//endregion
 
     private var selectedItem: ProfileViewHolder? = null
 

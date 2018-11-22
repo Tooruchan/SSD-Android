@@ -82,16 +82,6 @@ object ProfileManager {
     }
 
     @Throws(IOException::class)
-    fun getAllProfilesWhetherSubscription(): List<Profile>? = try {
-        PrivateDatabase.profileDao.list()
-    } catch (ex: SQLiteCantOpenDatabaseException) {
-        throw IOException(ex)
-    } catch (ex: SQLException) {
-        printLog(ex)
-        null
-    }
-
-    @Throws(IOException::class)
     fun withoutSubscriptionIsNotEmpty(): Boolean = try {
         PrivateDatabase.profileDao.withoutSubscriptionIsNotEmpty()
     } catch (ex: SQLiteCantOpenDatabaseException) {
