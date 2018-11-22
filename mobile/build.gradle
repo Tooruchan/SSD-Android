@@ -24,8 +24,8 @@ android {
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.sdkVersion
         //versionCode 4060100
-        versionCode 0
-        versionName "0.0.0"
+        versionCode 200
+        versionName "0.0.2"
         testApplicationId "com.github.shadowsocksd.test"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resConfigs "fa", "fr", "ja", "ko", "ru", "zh-rCN", "zh-rTW"
