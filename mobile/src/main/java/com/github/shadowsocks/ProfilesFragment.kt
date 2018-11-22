@@ -589,6 +589,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         var addSubscriptionsAdapter: ProfileSubscriptionsAdapter? = null
         override fun doInBackground(vararg params: Unit): String {
             var urlResult = ""
+            urlParse=urlParse.trim()
             try {
                 urlResult = URL(urlParse).readText()
             } catch (e: Exception) {
@@ -631,7 +632,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 }
 
                 val oldSubscription = SubscriptionManager.getAllSubscriptions()?.firstOrNull {
-                    it.url == urlParse
+                    it.url == newSubscription.url
                 }
 
                 var oldServers = listOf<Profile>()
