@@ -13,6 +13,7 @@
     <string name="subscription_expiry">%s %d天</string>
     <string name="title_common_profiles">普通配置</string>
     <string name="title_subscription_profiles">订阅配置</string>
+    <string name="navigation_project_repository">项目仓库</string>
     <!-- DSS -->
 
 <string name="quick_toggle">"开关"</string>

@@ -21,5 +21,12 @@
         <item android:id="@+id/about"
               android:title="@string/about"
               android:icon="@drawable/ic_action_copyright"/>
+        <!-- SSD -->
+        <item
+            android:id="@+id/project_repository"
+            android:checkable="false"
+            android:title="@string/navigation_project_repository"
+            android:icon="@drawable/ic_action_copyright"/>
+        <!-- DSS -->
     </group>
 </menu>

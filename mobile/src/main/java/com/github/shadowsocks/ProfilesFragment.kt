@@ -767,7 +767,6 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         val animatorSubscription = DefaultItemAnimator()
         subscriptionsList.itemAnimator = animatorSubscription
         subscriptionsList.adapter = subscriptionsAdapter
-
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0,
                 ItemTouchHelper.START or ItemTouchHelper.END) {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {

@@ -1,88 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- SSD -->
-<!-- add: -->
-<!-- android:id="@+id/rootView" -->
-<!-- DSS -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/rootView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-    <include layout="@layout/toolbar_light_dark" />
-    
+    <include layout="@layout/toolbar_light_dark"/>
     <!-- SSD -->
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/scrollview"
+    <TextView
+        android:id="@+id/tv_title_subscription"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tv_title_subscription"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?android:attr/listDivider"
-                android:paddingBottom="4dp"
-                android:paddingLeft="8dp"
-                android:paddingRight="8dp"
-                android:paddingTop="4dp"
-                android:text="@string/title_subscription_profiles"
-                android:textColor="?android:attr/textColorPrimary"
-                android:textSize="20dp"
-                android:textStyle="bold" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/list_subscription"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:clipChildren="false"
-                android:clipToPadding="false"
-                android:nestedScrollingEnabled="false"
-                android:scrollbars="vertical"
-                tools:listitem="@layout/layout_main_subscription" />
-
-            <TextView
-                android:id="@+id/tv_title_common_profile"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?android:attr/listDivider"
-                android:paddingBottom="4dp"
-                android:paddingLeft="8dp"
-                android:paddingRight="8dp"
-                android:paddingTop="4dp"
-                android:text="@string/title_common_profiles"
-                android:textColor="?android:attr/textColorPrimary"
-                android:textSize="20dp"
-                android:textStyle="bold" />
-
-            <!-- DSS -->
-
-            <!-- SSD -->
-            <!-- remove: -->
-            <!-- android:layout_weight="1" -->
-            <!-- change: -->
-            <!-- android:layout_height="wrap_content" -->
-            <!-- add: -->
-            <!-- android:nestedScrollingEnabled="false" -->
-            <!-- DSS -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/list"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:clipChildren="false"
-                android:clipToPadding="false"
-                android:nestedScrollingEnabled="false"
-                android:paddingBottom="88dp"
-                android:scrollbars="vertical"
-                tools:listitem="@layout/layout_profile" />
-            <!-- SSD -->
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+        android:layout_height="wrap_content"
+        android:background="?android:attr/listDivider"
+        android:paddingBottom="4dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingTop="4dp"
+        android:text="@string/title_subscription_profiles"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="20dp"
+        android:textStyle="bold" />
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/list_subscription"
+        tools:listitem="@layout/layout_main_subscription"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false"/>
+    <TextView
+        android:id="@+id/tv_title_common_profile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/listDivider"
+        android:paddingBottom="4dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingTop="4dp"
+        android:text="@string/title_common_profiles"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="20dp"
+        android:textStyle="bold" />
     <!-- DSS -->
-
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/list"
+        tools:listitem="@layout/layout_profile"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingBottom="88dp"
+        android:scrollbars="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false"/>
 </LinearLayout>

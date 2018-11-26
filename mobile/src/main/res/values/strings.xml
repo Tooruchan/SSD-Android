@@ -13,6 +13,7 @@
   <string name="subscription_expiry">%s %dd</string>
   <string name="title_subscription_profiles">Subscription profile(s)</string>
   <string name="title_common_profiles">Common profile(s)</string>
+  <string name="navigation_project_repository">Project Repository</string>
   <!-- DSS -->
 
   <string name="app_name">ShadowsocksD</string>

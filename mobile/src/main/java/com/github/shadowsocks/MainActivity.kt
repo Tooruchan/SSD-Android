@@ -329,6 +329,12 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface, OnPre
                     launchUrl(getString(R.string.faq_url))
                     return true
                 }
+                //region SSD
+                R.id.project_repository->{
+                    launchUrl("https://github.com/CGDF-Github/SSD-Android")
+                    return true
+                }
+                //endregion
                 R.id.customRules -> displayFragment(CustomRulesFragment())
                 else -> return false
             }
