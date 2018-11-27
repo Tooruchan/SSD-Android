@@ -245,7 +245,11 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
 
     inner class ProfilesAdapter : RecyclerView.Adapter<ProfileViewHolder>() {
-        internal val profiles = ProfileManager.getAllProfiles()?.toMutableList() ?: mutableListOf()
+        //region SSD
+        internal val profiles = ProfileManager.getSubscription(0)?.toMutableList()
+                ?: mutableListOf()
+        //internal val profiles = ProfileManager.getAllProfiles()?.toMutableList() ?: mutableListOf()
+        //endregion
         private val updated = HashSet<Profile>()
 
         init {

@@ -242,6 +242,7 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface, OnPre
         fab.setOnClickListener {
             when {
                 state == BaseService.CONNECTED -> app.stopService()
+
                 BaseService.usingVpnMode -> {
                     val intent = VpnService.prepare(this)
                     if (intent != null) startActivityForResult(intent, REQUEST_CONNECT)
@@ -395,6 +396,7 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface, OnPre
 
     override fun onDestroy() {
         super.onDestroy()
+
         DataStore.publicStore.unregisterChangeListener(this)
         connection.disconnect()
         BackupManager(this).dataChanged()

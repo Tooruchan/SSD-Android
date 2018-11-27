@@ -126,9 +126,7 @@ object ProfileManager {
 
     @Throws(IOException::class)
     fun getAllProfiles(): List<Profile>? = try {
-        //region SSD
-        PrivateDatabase.profileDao.getSubscription(0)
-        //endregion
+        PrivateDatabase.profileDao.list()
     } catch (ex: SQLiteCantOpenDatabaseException) {
         throw IOException(ex)
     } catch (ex: SQLException) {
