@@ -129,6 +129,19 @@ class ProfileConfigFragment : PreferenceFragmentCompat(), Toolbar.OnMenuItemClic
         ProfilesFragment.instance?.profilesAdapter?.deepRefreshId(profileId)
         //region SSD
         if(profile.subscription!=0L){
+            //todo ssd : should optimize
+            ProfileManager.getSubscription(profile.subscription)?.forEach {
+                it.route = profile.route
+                it.remoteDns = profile.remoteDns
+                it.ipv6 = profile.ipv6
+
+                it.proxyApps = profile.proxyApps
+                it.bypass = profile.bypass
+                it.individual = profile.individual
+
+                it.udpdns = profile.udpdns
+                ProfileManager.updateProfile(it)
+            }
             ProfilesFragment.instance?.subscriptionsAdapter?.deepRefreshSubscriptionId(profile.subscription)
         }
         //endregion
