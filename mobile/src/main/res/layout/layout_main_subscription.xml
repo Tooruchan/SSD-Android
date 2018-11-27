@@ -35,6 +35,17 @@
             android:textColor="?android:attr/textColorPrimary"
             android:textStyle="bold"
             tools:text="airport_name"/>
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/edit"
+            android:focusable="true"
+            android:padding="12dp"
+            app:srcCompat="@drawable/ic_image_edit" />
     </LinearLayout>
 
     <RelativeLayout
@@ -87,16 +98,6 @@
             android:ellipsize="end"
             android:gravity="center_vertical"
             android:maxLines="2"/>
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/edit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/edit"
-            android:focusable="true"
-            android:padding="12dp"
-            app:srcCompat="@drawable/ic_image_edit" />
     </LinearLayout>
 
     <RelativeLayout
