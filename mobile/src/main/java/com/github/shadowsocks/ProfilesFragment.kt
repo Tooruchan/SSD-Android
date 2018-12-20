@@ -573,10 +573,6 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     trafficTotal = jsonObject.optDouble("traffic_total", -1.0)
                     expiry = jsonObject.optString("expiry", "")
                     plugin = jsonObject.optString("plugin", "")
-                    if (plugin == "simple-obfs") {
-                        plugin = "obfs-local"
-                        //it's not a good idea
-                    }
                     pluginOptions = jsonObject.optString("plugin_options", "")
                 }
 
@@ -604,8 +600,15 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                             remotePort = newProfileJSON.optInt("port", newSubscription.port)
                             method = newProfileJSON.optString("encryption", newSubscription.encryption)
                             password = newProfileJSON.optString("password", newSubscription.password)
-                            if (newSubscription.plugin != "") {
-                                plugin = PluginOptions(newSubscription.plugin, newSubscription.pluginOptions).toString(false)
+
+                            var profilePlugin = newProfileJSON.optString("plugin", newSubscription.plugin)
+                            val profilePluginOptions = newProfileJSON.optString("plugin_options", newSubscription.pluginOptions)
+                            if (profilePlugin == "simple-obfs") {
+                                profilePlugin = "obfs-local"
+                                //it's not a good idea
+                            }
+                            if (profilePlugin != "") {
+                                plugin = PluginOptions(profilePlugin, profilePluginOptions).toString(false)
                             }
 
                             val oldServer = oldServers.firstOrNull {
