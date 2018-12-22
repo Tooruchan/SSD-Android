@@ -16,7 +16,7 @@
   <string name="navigation_project_repository">Project Repository</string>
   <!-- DSS -->
 
-  <string name="app_name">ShadowsocksD</string>
+  <string name="app_name">SSD</string>
   <string name="quick_toggle">Toggle</string>
   <string name="send_email">Send email</string>
 

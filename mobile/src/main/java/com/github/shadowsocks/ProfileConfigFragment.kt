@@ -26,7 +26,9 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.UserManager
+import android.text.InputType
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.getSystemService
@@ -128,7 +130,7 @@ class ProfileConfigFragment : PreferenceFragmentCompat(), Toolbar.OnMenuItemClic
         ProfileManager.updateProfile(profile)
         ProfilesFragment.instance?.profilesAdapter?.deepRefreshId(profileId)
         //region SSD
-        if(profile.subscription!=0L){
+        if (profile.subscription != 0L) {
             //todo ssd : should optimize
             ProfileManager.getSubscription(profile.subscription)?.forEach {
                 it.route = profile.route
@@ -167,10 +169,23 @@ class ProfileConfigFragment : PreferenceFragmentCompat(), Toolbar.OnMenuItemClic
     }
 
     override fun onPreferenceDataStoreChanged(store: PreferenceDataStore, key: String?) {
+        //region SSD
+        val preference = findPreference(key)
+        if (preference?.key == Key.password) {
+            val passwordPreference = preference as EditTextPreference
+            passwordPreference.editText.inputType = InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        //endregion
         if (key != Key.proxyApps && findPreference(key) != null) DataStore.dirty = true
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {
+        //region SSD
+        if (preference.key == Key.password) {
+            val passwordPreference = preference as EditTextPreference
+            passwordPreference.editText.inputType = InputType.TYPE_CLASS_TEXT
+        }
+        //endregion
         if (preference.key == Key.pluginConfigure) {
             val intent = PluginManager.buildIntent(pluginConfiguration.selected, PluginContract.ACTION_CONFIGURE)
             if (intent.resolveActivity(requireContext().packageManager) == null) showPluginEditor() else
