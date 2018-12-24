@@ -538,7 +538,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         var addSubscriptionsAdapter: ProfileSubscriptionsAdapter? = null
         override fun doInBackground(vararg params: Unit): String {
             var urlResult = ""
-            urlParse=urlParse.trim()
+            urlParse = urlParse.trim()
             try {
                 urlResult = URL(urlParse).readText()
             } catch (e: Exception) {
@@ -580,12 +580,11 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     it.url == newSubscription.url
                 }
 
-                var oldServers = listOf<Profile>()
+                var oldSelectedServer: Profile? = null
                 if (oldSubscription != null) {
-                    oldServers = ProfileManager.getSubscription(oldSubscription.id) ?: emptyList()
+                    oldSelectedServer = ProfileManager.getProfile(oldSubscription.selectedProfileId)
                     addSubscriptionsAdapter?.removeSubscriptionId(oldSubscription.id)
                 }
-                SubscriptionManager.updateSubscription(newSubscription)
 
                 jsonObject.optJSONArray("servers")?.let {
                     for (index in 0 until it.length()) {
@@ -611,24 +610,24 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                                 plugin = PluginOptions(profilePlugin, profilePluginOptions).toString(false)
                             }
 
-                            val oldServer = oldServers.firstOrNull {
-                                it.innerId == innerId
-                            }
-                            if (oldServer != null) {
-                                route = oldServer.route
-                                remoteDns = oldServer.remoteDns
-                                proxyApps = oldServer.proxyApps
-                                bypass = oldServer.bypass
-                                udpdns = oldServer.udpdns
-                                ipv6 = oldServer.ipv6
-                                individual = oldServer.individual
-                                //is there a good way to simplify it?
+                            if (oldSelectedServer != null) {
+                                route = oldSelectedServer.route
+                                remoteDns = oldSelectedServer.remoteDns
+                                proxyApps = oldSelectedServer.proxyApps
+                                bypass = oldSelectedServer.bypass
+                                udpdns = oldSelectedServer.udpdns
+                                ipv6 = oldSelectedServer.ipv6
+                                individual = oldSelectedServer.individual
+                                if(innerId==oldSelectedServer.innerId){
+                                    newSubscription.selectedProfileId=id
+                                }
                             }
 
                             ProfileManager.updateProfile(this)
                         }
                     }
                 }
+                SubscriptionManager.updateSubscription(newSubscription)
                 addSubscriptionsAdapter?.add(newSubscription)
                 val messageShow = parseContext?.getString(R.string.message_subscribe_success)
                 Toast.makeText(parseContext, messageShow, Toast.LENGTH_LONG).show()
