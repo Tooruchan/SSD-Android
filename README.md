@@ -17,23 +17,17 @@ ShadowsocksD会跟随Shadowsocks更新代码。
 
 Android 5.0+
 
+非\[华为/360/锤子]设备
+
 无\[360/2345/百度/腾讯\]全家桶
 
 ## Development - 开发
 
-Centos 7
+\[Linux/MacOS\]
+
 ```
-  *  Q: 如何使用Windows进行开发？
-     A: 抱歉我也不知道。如果有兴趣，可以自行尝试：https://github.com/shadowsocks/shadowsocks-android/pull/1570
+  *  因Go还不支持在Windows平台上使用clang进行混合编译，所以如果想用Windows开发，需要先用[Linux/MacOS]将overturn预编译好，然后复制到Windows上
 ```    
-
-JDK 1.8
-
-Go 1.4+
-
-Android SDK
-  * Build Tools 27+
-  * Android NDK r16+
 
 ## Open Source References - 开源引用
 ```
