@@ -82,8 +82,6 @@ dependencies {
     androidTestImplementation "android.arch.work:work-testing:$workVersion"
     androidTestImplementation "androidx.test:runner:$androidTestVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidEspressoVersion"
-    debugImplementation 'com.idescout.sql:sqlscout-server:4.1'
-    releaseImplementation 'com.idescout.sql:sqlscout-server-noop:4.1'
 }
 repositories {
     mavenCentral()
