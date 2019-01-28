@@ -223,6 +223,14 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface, OnPre
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //region SSD
+        val mineList= arrayListOf("huawei","smartisan","qiku","360")
+        for(mine in mineList){
+            if (android.os.Build.BOARD.toLowerCase().trim()==mine||android.os.Build.MANUFACTURER.toLowerCase().trim()==mine){
+                val messageShow=getString(R.string.message_mine_detected,mine)
+                Toast.makeText(this,messageShow,Toast.LENGTH_LONG).show()
+                finishAndRemoveTask()
+            }
+        }
         CheckVersion().apply {
             checkUpdateContext=this@MainActivity
         }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
@@ -368,7 +376,6 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Interface, OnPre
                 val messageShow=getString(R.string.message_virus_detected,appName)
                 Toast.makeText(this,messageShow,Toast.LENGTH_LONG).show()
                 finishAndRemoveTask()
-                break
             }
             catch (exception:Exception){
             }
