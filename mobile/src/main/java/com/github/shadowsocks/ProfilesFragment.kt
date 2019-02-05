@@ -31,6 +31,7 @@ import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.os.AsyncTask
 import android.os.Bundle
+import android.text.Editable
 import android.text.format.Formatter
 import android.util.Base64
 import android.view.*
@@ -62,7 +63,7 @@ import com.google.android.gms.ads.AdView
 import net.glxn.qrgen.android.QRCode
 import org.json.JSONArray
 import org.json.JSONObject
-import java.net.URL
+import java.net.*
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.*
@@ -246,9 +247,18 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
     inner class ProfilesAdapter : RecyclerView.Adapter<ProfileViewHolder>() {
         //region SSD
+        //internal val profiles = ProfileManager.getAllProfiles()?.toMutableList() ?: mutableListOf()
         internal val profiles = ProfileManager.getSubscription(0)?.toMutableList()
                 ?: mutableListOf()
-        //internal val profiles = ProfileManager.getAllProfiles()?.toMutableList() ?: mutableListOf()
+
+        var editable = true
+        fun lockEdit(lockState: Boolean) {
+            editable = lockState
+            profiles.forEach {
+                refreshId(it.id)
+            }
+        }
+
         //endregion
         private val updated = HashSet<Profile>()
 
@@ -336,7 +346,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
     inner class ProfileSubscriptionViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         internal lateinit var item: Subscription
         internal var profiles = emptyList<Profile>()
-        private val traffic_usage = itemView.findViewById<TextView>(R.id.text_traffic_usage)
+        private val trafficUsage = itemView.findViewById<TextView>(R.id.text_traffic_usage)
         private val expiry = itemView.findViewById<TextView>(R.id.text_expiry)
         private val text1 = itemView.findViewById<TextView>(R.id.airport_name)
         private val text2 = itemView.findViewById<TextView>(android.R.id.text2)
@@ -398,9 +408,9 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             profiles = ProfileManager.getSubscription(item.id)!!
             text1.text = item.airport
             if (item.trafficUsed >= 0 && item.trafficTotal > 0) {
-                traffic_usage.text = "%.2f / %.2f G".format(item.trafficUsed, item.trafficTotal)
+                trafficUsage.text = "%.2f / %.2f G".format(item.trafficUsed, item.trafficTotal)
             } else {
-                traffic_usage.text = "? / ? G"
+                trafficUsage.text = "? / ? G"
             }
             try {
                 val expiryDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(item.expiry)
@@ -410,12 +420,15 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 expiry.text = "????-??-?? ??:??:??"
             }
             var editable = true
-            ProfileManager.getSubscription(item.id)?.forEach {
+            ProfileManager.getSubscription(item.id)?.firstOrNull {
                 if (!isProfileEditable(it.id)) {
                     editable = false
-                    return@forEach
+                    true
+                } else {
+                    false
                 }
             }
+            editable = editable && subscriptionsAdapter.editable
             edit.isEnabled = editable
             edit.alpha = if (editable) 1F else .5F
 
@@ -460,7 +473,14 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
                     val itemView: TextView = super.getDropDownView(position, convertView, parent) as TextView
                     val viewItem = getItem(position)!!
-                    val viewText = "[x" + viewItem.ratio + "] " + viewItem.name
+                    val latencyText = when (viewItem.latency) {
+                        Profile.LATENCY_UNKNOWN -> "?"
+                        Profile.LATENCY_TESTING -> getString(R.string.latency_testing)
+                        Profile.LATENCY_PENDING -> getString(R.string.latency_pending)
+                        Profile.LATENCY_ERROR -> getString(R.string.latency_error)
+                        else -> viewItem.latency.toString() + "ms"
+                    }
+                    val viewText = "[" + latencyText + " x" + viewItem.ratio + "] " + viewItem.name
                     itemView.setText(viewText)
                     return itemView
                 }
@@ -485,6 +505,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         override fun getItemId(position: Int): Long = subscriptions[position].id
         override fun onBindViewHolder(holder: ProfileSubscriptionViewHolder, position: Int) = holder.bind(subscriptions[position])
 
+        var editable = true
+        fun lockEdit(lockState: Boolean) {
+            editable = lockState
+            subscriptions.forEach {
+                refreshSubscriptionId(it.id)
+            }
+        }
 
         fun add(item: Subscription) {
             val pos = itemCount
@@ -527,10 +554,25 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             if (index < 0) return
             subscriptions[index] = SubscriptionManager.getSubscription(id)!!
             notifyItemChanged(index)
+
         }
     }
 
     private var selectedProfileSubscription: ProfileSubscriptionViewHolder? = null
+
+    private class LockEdit : AsyncTask<Unit, Int, Unit>() {
+        var lockProfileAdapter: ProfilesAdapter? = null
+        var lockSubscriptionAdapter: ProfileSubscriptionsAdapter? = null
+        var lockState: Boolean = false
+        override fun doInBackground(vararg params: Unit?) {
+
+        }
+
+        override fun onPostExecute(result: Unit?) {
+            lockProfileAdapter?.lockEdit(lockState)
+            lockSubscriptionAdapter?.lockEdit(lockState)
+        }
+    }
 
     private class ParseURL : AsyncTask<Unit, Int, String>() {
         var urlParse = ""
@@ -551,7 +593,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             super.onPostExecute(result)
             if (result.isNullOrBlank()) {
                 val messageShow = parseContext?.getString(R.string.message_subscribe_fail)
-                Toast.makeText(parseContext, messageShow, Toast.LENGTH_LONG).show()
+                Toast.makeText(parseContext, messageShow, Toast.LENGTH_SHORT).show()
                 return
             }
 
@@ -618,8 +660,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                                 udpdns = oldSelectedServer.udpdns
                                 ipv6 = oldSelectedServer.ipv6
                                 individual = oldSelectedServer.individual
-                                if(innerId==oldSelectedServer.innerId){
-                                    newSubscription.selectedProfileId=id
+                                if (innerId == oldSelectedServer.innerId) {
+                                    newSubscription.selectedProfileId = id
                                 }
                             }
 
@@ -630,10 +672,10 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 SubscriptionManager.updateSubscription(newSubscription)
                 addSubscriptionsAdapter?.add(newSubscription)
                 val messageShow = parseContext?.getString(R.string.message_subscribe_success)
-                Toast.makeText(parseContext, messageShow, Toast.LENGTH_LONG).show()
+                Toast.makeText(parseContext, messageShow, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 val messageShow = parseContext?.getString(R.string.message_subscribe_fail)
-                Toast.makeText(parseContext, messageShow, Toast.LENGTH_LONG).show()
+                Toast.makeText(parseContext, messageShow, Toast.LENGTH_SHORT).show()
                 SubscriptionManager.delSubscriptionWithProfiles(newSubscription.id)
             }
         }
@@ -654,11 +696,20 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     .setPositiveButton(android.R.string.ok) { _, _ ->
                         val messageShow = getString(R.string.message_loading_subscription)
                         Toast.makeText(context, messageShow, Toast.LENGTH_SHORT).show()
+
+                        val singleThreadExecutor = Executors.newSingleThreadExecutor()
+                        subscriptionsAdapter.lockEdit(false)
+                        profilesAdapter.lockEdit(false)
                         ParseURL().apply {
                             urlParse = editText.text.toString()
                             parseContext = context
                             addSubscriptionsAdapter = subscriptionsAdapter
-                        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+                        }.executeOnExecutor(singleThreadExecutor)
+                        LockEdit().apply {
+                            lockSubscriptionAdapter = subscriptionsAdapter
+                            lockProfileAdapter = profilesAdapter
+                            lockState = true
+                        }.executeOnExecutor(singleThreadExecutor)
                     }
                     .setView(view)
         }
@@ -830,14 +881,49 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
             R.id.action_update_subscription -> {
                 val messageShow = getString(R.string.message_updating_subscription)
-                Toast.makeText(context, messageShow, Toast.LENGTH_LONG).show()
+                Toast.makeText(context, messageShow, Toast.LENGTH_SHORT).show()
+
+                val singleThreadExecutor = Executors.newSingleThreadExecutor()
+                subscriptionsAdapter.lockEdit(false)
                 SubscriptionManager.getAllSubscriptions()?.forEach {
                     ParseURL().apply {
                         urlParse = it.url
                         parseContext = context
                         addSubscriptionsAdapter = subscriptionsAdapter
-                    }.executeOnExecutor(Executors.newSingleThreadExecutor())
+                    }.executeOnExecutor(singleThreadExecutor)
                 }
+                LockEdit().apply {
+                    lockSubscriptionAdapter = subscriptionsAdapter
+                    lockState = true
+                }.executeOnExecutor(singleThreadExecutor)
+                true
+            }
+
+            R.id.action_tcping_latency -> {
+                //todo ssd: to complete
+                val profileListWithOrder = mutableListOf<Profile>()
+                SubscriptionManager.getAllSubscriptions()?.forEach {
+                    val subscriptionProfile = ProfileManager.getSubscription(it.id)
+                    if (subscriptionProfile != null) {
+                        profileListWithOrder.addAll(subscriptionProfile)
+                    }
+                }
+
+                val commonProfileList = ProfileManager.getSubscription(0)
+                if (commonProfileList != null) {
+                    profileListWithOrder.addAll(commonProfileList)
+                }
+
+                profileListWithOrder.forEach {
+                    val tcpingSocket = Socket()
+                    val profileIP = InetAddress.getByName(it.host)
+                    val profileAddress = InetSocketAddress(profileIP, it.remotePort)
+                    val stopwatchStart = System.currentTimeMillis()
+                    tcpingSocket.connect(profileAddress, 2000)
+                    it.latency = (System.currentTimeMillis() - stopwatchStart).toInt()
+                    ProfileManager.updateProfile(it)
+                }
+
                 true
             }
             //endregion

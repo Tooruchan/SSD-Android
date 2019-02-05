@@ -20,6 +20,7 @@
 
 package com.github.shadowsocks.database
 
+import android.content.res.Resources
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
@@ -42,6 +43,12 @@ import java.util.*
 @Entity
 class Profile : Serializable {
     companion object {
+        //region SSD
+        const val LATENCY_UNKNOWN = -1
+        const val LATENCY_TESTING = -2
+        const val LATENCY_PENDING = -3
+        const val LATENCY_ERROR = -4
+        //endregion
         private const val TAG = "ShadowParser"
         private const val serialVersionUID = 0L
         private val pattern = """(?i)ss://[-a-zA-Z0-9+&@#/%?=~_|!:,.;\[\]]*[-a-zA-Z0-9+&@#/%=~_|\[\]]""".toRegex()
@@ -129,7 +136,8 @@ class Profile : Serializable {
                     json.optJSONObject("proxy_apps")?.also {
                         proxyApps = it.optBoolean("enabled", proxyApps)
                         bypass = it.optBoolean("bypass", bypass)
-                        individual = it.optJSONArray("android_list")?.asIterable()?.joinToString("\n") ?: individual
+                        individual = it.optJSONArray("android_list")?.asIterable()?.joinToString("\n")
+                                ?: individual
                     }
                     udpdns = json.optBoolean("udpdns", udpdns)
                     //region SSD
@@ -164,7 +172,7 @@ class Profile : Serializable {
         fun list(): List<Profile>
 
         //region SSD
-        @Query("SELECT * FROM `Profile` WHERE `subscription` = :subscription")
+        @Query("SELECT * FROM `Profile` WHERE `subscription` = :subscription ORDER BY `innerId` , `userOrder`")
         fun getSubscription(subscription: Long): List<Profile>
 
         @Query("DELETE FROM `Profile` WHERE `subscription` = :subscription")

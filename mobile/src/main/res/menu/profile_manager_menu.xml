@@ -61,4 +61,14 @@
                 android:title="@string/action_export_file"/>
         </menu>
     </item>
+    <!-- SSD -->
+    <item
+        android:id="@+id/action_tcping_latency"
+        android:alphabeticShortcut="t"
+        android:icon="@drawable/ic_action_offline_bolt"
+        android:numericShortcut="2"
+        android:title="@string/tcping_latency"
+        app:showAsAction="always">
+    </item>
+    <!-- DSS -->
 </menu>
