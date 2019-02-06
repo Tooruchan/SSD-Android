@@ -172,6 +172,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 rx += rxTotal
             }
             text1.text = item.formattedName
+            //region SSD
+            if (!profilesAdapter.editable) {
+                edit.isEnabled = false
+                edit.alpha = .5F
+            }
+            text1.text = "[" + latencyText(item) + "]" + item.formattedName
+            //endregion SSD
             text2.text = ArrayList<String>().apply {
                 if (!item.name.isNullOrEmpty()) this += item.formattedAddress
                 val id = PluginConfiguration(item.plugin ?: "").selected
@@ -473,14 +480,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
                     val itemView: TextView = super.getDropDownView(position, convertView, parent) as TextView
                     val viewItem = getItem(position)!!
-                    val latencyText = when (viewItem.latency) {
-                        Profile.LATENCY_UNKNOWN -> "?"
-                        Profile.LATENCY_TESTING -> getString(R.string.latency_testing)
-                        Profile.LATENCY_PENDING -> getString(R.string.latency_pending)
-                        Profile.LATENCY_ERROR -> getString(R.string.latency_error)
-                        else -> viewItem.latency.toString() + "ms"
-                    }
-                    val viewText = "[" + latencyText + " x" + viewItem.ratio + "] " + viewItem.name
+                    val viewText = "[" + latencyText(viewItem) + " x" + viewItem.ratio + "] " + viewItem.name
                     itemView.setText(viewText)
                     return itemView
                 }
@@ -560,24 +560,83 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
     private var selectedProfileSubscription: ProfileSubscriptionViewHolder? = null
 
+    fun latencyText(profile: Profile) = when (profile.latency) {
+        Profile.LATENCY_UNKNOWN -> "?"
+        Profile.LATENCY_TESTING -> getString(R.string.latency_testing)
+        Profile.LATENCY_PENDING -> getString(R.string.latency_pending)
+        Profile.LATENCY_ERROR -> getString(R.string.latency_error)
+        else -> profile.latency.toString() + "ms"
+    }
+
     private class LockEdit : AsyncTask<Unit, Int, Unit>() {
-        var lockProfileAdapter: ProfilesAdapter? = null
         var lockSubscriptionAdapter: ProfileSubscriptionsAdapter? = null
+        var lockProfileAdapter: ProfilesAdapter? = null
         var lockState: Boolean = false
         override fun doInBackground(vararg params: Unit?) {
 
         }
 
         override fun onPostExecute(result: Unit?) {
-            lockProfileAdapter?.lockEdit(lockState)
             lockSubscriptionAdapter?.lockEdit(lockState)
+            lockProfileAdapter?.lockEdit(lockState)
+        }
+    }
+
+    private class TcpingLatency : AsyncTask<Unit, Int, Int>() {
+        lateinit var tcpingProfile: Profile
+        lateinit var latencySubscriptionAdapter: ProfileSubscriptionsAdapter
+        lateinit var latencyProfileAdapter: ProfilesAdapter
+
+        override fun onProgressUpdate(vararg values: Int?) {
+            super.onProgressUpdate(*values)
+            tcpingProfile.latency = Profile.LATENCY_TESTING
+            ProfileManager.updateProfile(tcpingProfile)
+            if (tcpingProfile.subscription == 0L) {
+                latencyProfileAdapter.deepRefreshId(tcpingProfile.id)
+            } else {
+                latencySubscriptionAdapter.refreshProfileId(tcpingProfile.id)
+            }
+        }
+
+
+        override fun doInBackground(vararg params: Unit?): Int {
+            publishProgress(0)
+            val tcpingSocket = Socket()
+            val profileIP = InetAddress.getByName(tcpingProfile.host)
+            val profileAddress = InetSocketAddress(profileIP, tcpingProfile.remotePort)
+            var latency = Profile.LATENCY_ERROR
+            try {
+                val stopwatchStart = System.currentTimeMillis()
+                tcpingSocket.connect(profileAddress, 2000)
+                val stopwatchTime = (System.currentTimeMillis() - stopwatchStart).toInt()
+                if (tcpingSocket.isConnected()) {
+                    latency = stopwatchTime
+                }
+            } catch (e: Exception) {
+            }
+
+            if (!tcpingSocket.isClosed()) {
+                tcpingSocket.close()
+            }
+            return latency
+        }
+
+        override fun onPostExecute(result: Int) {
+            super.onPostExecute(result)
+            tcpingProfile.latency = result
+            ProfileManager.updateProfile(tcpingProfile)
+            if (tcpingProfile.subscription == 0L) {
+                latencyProfileAdapter.deepRefreshId(tcpingProfile.id)
+            } else {
+                latencySubscriptionAdapter.refreshProfileId(tcpingProfile.id)
+            }
         }
     }
 
     private class ParseURL : AsyncTask<Unit, Int, String>() {
         var urlParse = ""
         var parseContext: Context? = null
-        var addSubscriptionsAdapter: ProfileSubscriptionsAdapter? = null
+        lateinit var addSubscriptionsAdapter: ProfileSubscriptionsAdapter
         override fun doInBackground(vararg params: Unit): String {
             var urlResult = ""
             urlParse = urlParse.trim()
@@ -599,7 +658,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
             val newSubscription = SubscriptionManager.createSubscription()
             try {
-                val base64Encoded = result?.replace("ssd://", "")
+                val base64Encoded = result.replace("ssd://", "")
                 val base64Decoded = Base64
                         .decode(base64Encoded, Base64.URL_SAFE)
                         .toString(Charset.forName("UTF-8"))
@@ -625,7 +684,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 var oldSelectedServer: Profile? = null
                 if (oldSubscription != null) {
                     oldSelectedServer = ProfileManager.getProfile(oldSubscription.selectedProfileId)
-                    addSubscriptionsAdapter?.removeSubscriptionId(oldSubscription.id)
+                    addSubscriptionsAdapter.removeSubscriptionId(oldSubscription.id)
                 }
 
                 jsonObject.optJSONArray("servers")?.let {
@@ -670,7 +729,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     }
                 }
                 SubscriptionManager.updateSubscription(newSubscription)
-                addSubscriptionsAdapter?.add(newSubscription)
+                addSubscriptionsAdapter.add(newSubscription)
                 val messageShow = parseContext?.getString(R.string.message_subscribe_success)
                 Toast.makeText(parseContext, messageShow, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
@@ -900,7 +959,6 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
 
             R.id.action_tcping_latency -> {
-                //todo ssd: to complete
                 val profileListWithOrder = mutableListOf<Profile>()
                 SubscriptionManager.getAllSubscriptions()?.forEach {
                     val subscriptionProfile = ProfileManager.getSubscription(it.id)
@@ -915,15 +973,31 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 }
 
                 profileListWithOrder.forEach {
-                    val tcpingSocket = Socket()
-                    val profileIP = InetAddress.getByName(it.host)
-                    val profileAddress = InetSocketAddress(profileIP, it.remotePort)
-                    val stopwatchStart = System.currentTimeMillis()
-                    tcpingSocket.connect(profileAddress, 2000)
-                    it.latency = (System.currentTimeMillis() - stopwatchStart).toInt()
+                    it.latency = Profile.LATENCY_PENDING
                     ProfileManager.updateProfile(it)
+                    if (it.subscription == 0L) {
+                        profilesAdapter.deepRefreshId(it.id)
+                    } else {
+                        subscriptionsAdapter.refreshProfileId(it.id)
+                    }
                 }
 
+                val singleThreadExecutor = Executors.newSingleThreadExecutor()
+                subscriptionsAdapter.lockEdit(false)
+                profilesAdapter.lockEdit(false)
+
+                profileListWithOrder.forEach {
+                    TcpingLatency().apply {
+                        tcpingProfile = it
+                        latencySubscriptionAdapter = subscriptionsAdapter
+                        latencyProfileAdapter = profilesAdapter
+                    }.executeOnExecutor(singleThreadExecutor)
+                }
+                LockEdit().apply {
+                    lockSubscriptionAdapter = subscriptionsAdapter
+                    lockProfileAdapter = profilesAdapter
+                    lockState = true
+                }.executeOnExecutor(singleThreadExecutor)
                 true
             }
             //endregion
