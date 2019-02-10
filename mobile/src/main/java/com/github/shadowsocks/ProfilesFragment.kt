@@ -31,7 +31,6 @@ import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.os.AsyncTask
 import android.os.Bundle
-import android.text.Editable
 import android.text.format.Formatter
 import android.util.Base64
 import android.view.*
@@ -173,7 +172,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
             text1.text = item.formattedName
             //region SSD
-            if (!profilesAdapter.editable) {
+            if (!profilesAdapter.lockEditable) {
                 edit.isEnabled = false
                 edit.alpha = .5F
             }
@@ -258,9 +257,9 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         internal val profiles = ProfileManager.getSubscription(0)?.toMutableList()
                 ?: mutableListOf()
 
-        var editable = true
-        fun lockEdit(lockState: Boolean) {
-            editable = lockState
+        var lockEditable = true
+        fun lockEdit(editableState: Boolean) {
+            lockEditable = editableState
             profiles.forEach {
                 refreshId(it.id)
             }
@@ -435,7 +434,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     false
                 }
             }
-            editable = editable && subscriptionsAdapter.editable
+            editable = editable && subscriptionsAdapter.lockEditable
             edit.isEnabled = editable
             edit.alpha = if (editable) 1F else .5F
 
@@ -505,9 +504,9 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         override fun getItemId(position: Int): Long = subscriptions[position].id
         override fun onBindViewHolder(holder: ProfileSubscriptionViewHolder, position: Int) = holder.bind(subscriptions[position])
 
-        var editable = true
-        fun lockEdit(lockState: Boolean) {
-            editable = lockState
+        var lockEditable = true
+        fun lockEdit(editableState: Boolean) {
+            lockEditable = editableState
             subscriptions.forEach {
                 refreshSubscriptionId(it.id)
             }
@@ -583,6 +582,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
     }
 
     private class TcpingLatency : AsyncTask<Unit, Int, Int>() {
+        lateinit var mainActivity: MainActivity
         lateinit var tcpingProfile: Profile
         lateinit var latencySubscriptionAdapter: ProfileSubscriptionsAdapter
         lateinit var latencyProfileAdapter: ProfilesAdapter
@@ -598,10 +598,12 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
         }
 
-
         override fun doInBackground(vararg params: Unit?): Int {
             publishProgress(0)
-            val tcpingSocket = Socket()
+            if(mainActivity.state!=BaseService.STOPPED){
+                return Profile.LATENCY_ERROR
+            }
+            val tcpingSocket = Socket(Proxy.NO_PROXY)
             val profileIP = InetAddress.getByName(tcpingProfile.host)
             val profileAddress = InetSocketAddress(profileIP, tcpingProfile.remotePort)
             var latency = Profile.LATENCY_ERROR
@@ -959,6 +961,14 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
 
             R.id.action_tcping_latency -> {
+                if((activity as MainActivity).state!=BaseService.STOPPED){
+                    Toast.makeText(context,getString(R.string.message_tcping_latency_unavailable),Toast.LENGTH_SHORT).show()
+                    return true
+                }
+
+                if(!profilesAdapter.lockEditable||!subscriptionsAdapter.lockEditable){
+                    return true
+                }
                 val profileListWithOrder = mutableListOf<Profile>()
                 SubscriptionManager.getAllSubscriptions()?.forEach {
                     val subscriptionProfile = ProfileManager.getSubscription(it.id)
@@ -988,6 +998,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
                 profileListWithOrder.forEach {
                     TcpingLatency().apply {
+                        mainActivity=activity as MainActivity
                         tcpingProfile = it
                         latencySubscriptionAdapter = subscriptionsAdapter
                         latencyProfileAdapter = profilesAdapter

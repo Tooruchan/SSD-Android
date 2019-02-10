@@ -13,6 +13,7 @@
     <string name="message_subscribe_success">订阅成功</string>
     <string name="message_loading_subscription">订阅加载中&#8230;</string>
     <string name="message_mine_detected">SSD 无法运行于 %s 设备，告辞！</string>
+    <string name="message_tcping_latency_unavailable">Tcping 延迟无法在已连接时使用</string>
     <string name="message_updating_subscription">订阅更新中&#8230;</string>
     <string name="message_virus_detected">SSD 无法运行于安装有 %s 的设备，告辞！</string>
     <string name="subscription_expiry">%s %d天</string>

@@ -13,6 +13,7 @@
   <string name="message_subscribe_success">Subscribe success</string>
   <string name="message_loading_subscription">Loading subscription&#8230;</string>
   <string name="message_mine_detected">SSD cannot run in %s device, bye!</string>
+  <string name="message_tcping_latency_unavailable">Tcping Latency is unavailable when connected</string>
   <string name="message_updating_subscription">Updating subscription&#8230;</string>
   <string name="message_virus_detected">SSD cannot run in the device that installed %s, bye!</string>
   <string name="subscription_expiry">%s %dd</string>
