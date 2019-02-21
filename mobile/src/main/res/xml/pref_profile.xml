@@ -20,9 +20,11 @@
                 android:inputType="number"
                 android:maxLength="5"
                 app:pref_summaryHasText="%s"
+            android:singleLine="true"
                 android:title="@string/remote_port"/>
         <AutoSummaryEditTextPreference
                 android:inputType="textPassword"
+            android:typeface="monospace"
                 app:pref_summaryPasswordSubstituteLength="0"
                 android:key="sitekey"
                 app:pref_summaryHasText="%s"
@@ -82,8 +84,17 @@
                 android:key="plugin.configure"
                 android:icon="@drawable/ic_action_settings"
                 android:persistent="false"
+            android:singleLine="true"
                 app:pref_summaryHasText="%s"
                 android:title="@string/plugin_configure"/>
+        <Preference
+            android:key="udpFallback"
+            android:title="@string/udp_fallback"
+            android:summary="@string/plugin_disabled">
+            <intent
+                android:targetPackage="com.github.shadowsocks"
+                android:targetClass="com.github.shadowsocks.UdpFallbackProfileActivity" />
+        </Preference>
 
     </PreferenceCategory>
 

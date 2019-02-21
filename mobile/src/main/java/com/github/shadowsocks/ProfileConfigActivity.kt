@@ -21,11 +21,15 @@
 package com.github.shadowsocks
 
 import android.app.Activity
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
+import com.github.shadowsocks.plugin.AlertDialogFragment
+import com.github.shadowsocks.plugin.Empty
 import com.github.shadowsocks.plugin.PluginContract
 import com.github.shadowsocks.preference.DataStore
 
@@ -34,27 +38,42 @@ class ProfileConfigActivity : AppCompatActivity() {
         const val REQUEST_CODE_PLUGIN_HELP = 1
     }
 
+    class UnsavedChangesDialogFragment : AlertDialogFragment<Empty, Empty>() {
+        override fun AlertDialog.Builder.prepare(listener: DialogInterface.OnClickListener) {
+            setTitle(R.string.unsaved_changes_prompt)
+            setPositiveButton(R.string.yes, listener)
+            setNegativeButton(R.string.no, listener)
+            setNeutralButton(android.R.string.cancel, null)
+        }
+    }
+
     private val child by lazy { supportFragmentManager.findFragmentById(R.id.content) as ProfileConfigFragment }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.layout_profile_config)
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        toolbar.setTitle(R.string.profile_config)
-        toolbar.setNavigationIcon(R.drawable.ic_navigation_close)
-        toolbar.setNavigationOnClickListener { onBackPressed() }
-        toolbar.inflateMenu(R.menu.profile_config_menu)
-        toolbar.setOnMenuItemClickListener(child)
+        setSupportActionBar(findViewById(R.id.toolbar))
+        supportActionBar!!.apply {
+            setDisplayHomeAsUpEnabled(true)
+            setHomeAsUpIndicator(R.drawable.ic_navigation_close)
+        }
     }
 
+    override fun onSupportNavigateUp(): Boolean {
+        if (!super.onSupportNavigateUp()) finish()
+        return true
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.profile_config_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem) = child.onOptionsItemSelected(item)
+
     override fun onBackPressed() {
-        if (DataStore.dirty) AlertDialog.Builder(this)
-                .setTitle(R.string.unsaved_changes_prompt)
-                .setPositiveButton(R.string.yes) { _, _ -> child.saveAndExit() }
-                .setNegativeButton(R.string.no) { _, _ -> finish() }
-                .setNeutralButton(android.R.string.cancel, null)
-                .create()
-                .show() else super.onBackPressed()
+        if (DataStore.dirty) UnsavedChangesDialogFragment().show(child, ProfileConfigFragment.REQUEST_UNSAVED_CHANGES)
+        else super.onBackPressed()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

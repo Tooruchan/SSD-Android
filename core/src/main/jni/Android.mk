@@ -25,9 +25,10 @@ BUILD_SHARED_EXECUTABLE := $(LOCAL_PATH)/build-shared-executable.mk
 include $(CLEAR_VARS)
 
 SODIUM_SOURCE := \
+	crypto_aead/aes256gcm/aesni/aead_aes256gcm_aesni.c \
 	crypto_aead/chacha20poly1305/sodium/aead_chacha20poly1305.c \
 	crypto_aead/xchacha20poly1305/sodium/aead_xchacha20poly1305.c \
-	crypto_core/curve25519/ref10/curve25519_ref10.c \
+	crypto_core/ed25519/ref10/ed25519_ref10.c \
 	crypto_core/hchacha20/core_hchacha20.c \
 	crypto_core/salsa/ref/core_salsa_ref.c \
 	crypto_generichash/blake2b/ref/blake2b-compress-ref.c \
@@ -278,59 +279,6 @@ LOCAL_LDLIBS := -llog
 include $(BUILD_SHARED_EXECUTABLE)
 
 ########################################################
-## shadowsocks-libev tunnel
-########################################################
-
-include $(CLEAR_VARS)
-
-SHADOWSOCKS_SOURCES := tunnel.c \
-	cache.c udprelay.c utils.c netutils.c json.c jconf.c \
-	crypto.c aead.c stream.c base64.c \
-	plugin.c ppbloom.c \
-	android.c
-
-LOCAL_MODULE    := ss-tunnel
-LOCAL_SRC_FILES := $(addprefix shadowsocks-libev/src/, $(SHADOWSOCKS_SOURCES))
-LOCAL_CFLAGS    := -Wall -fno-strict-aliasing -DMODULE_TUNNEL \
-					-DUSE_CRYPTO_MBEDTLS -DHAVE_CONFIG_H -DSSTUNNEL_JNI \
-					-DCONNECT_IN_PROGRESS=EINPROGRESS \
-					-I$(LOCAL_PATH)/libancillary \
-					-I$(LOCAL_PATH)/include \
-					-I$(LOCAL_PATH)/libsodium/src/libsodium/include \
-					-I$(LOCAL_PATH)/libsodium/src/libsodium/include/sodium \
-					-I$(LOCAL_PATH)/mbedtls/include \
-					-I$(LOCAL_PATH)/libev \
-					-I$(LOCAL_PATH)/shadowsocks-libev/libcork/include \
-					-I$(LOCAL_PATH)/shadowsocks-libev/libbloom \
-					-I$(LOCAL_PATH)/include/shadowsocks-libev
-
-LOCAL_STATIC_LIBRARIES := libev libmbedtls libsodium libcork libbloom libancillary
-
-LOCAL_LDLIBS := -llog
-
-include $(BUILD_SHARED_EXECUTABLE)
-
-########################################################
-## jni-helper
-########################################################
-
-include $(CLEAR_VARS)
-
-LOCAL_MODULE:= jni-helper
-
-LOCAL_CFLAGS := -std=c++11
-
-LOCAL_C_INCLUDES:= $(LOCAL_PATH)/libancillary
-
-LOCAL_SRC_FILES:= jni-helper.cpp
-
-LOCAL_LDLIBS := -ldl -llog
-
-LOCAL_STATIC_LIBRARIES := cpufeatures libancillary
-
-include $(BUILD_SHARED_LIBRARY)
-
-########################################################
 ## tun2socks
 ########################################################
 
@@ -377,7 +325,6 @@ TUN2SOCKS_SOURCES := \
         flow/PacketProtoDecoder.c \
         socksclient/BSocksClient.c \
         tuntap/BTap.c \
-        lwip/src/core/timers.c \
         lwip/src/core/udp.c \
         lwip/src/core/memp.c \
         lwip/src/core/init.c \
@@ -386,14 +333,16 @@ TUN2SOCKS_SOURCES := \
         lwip/src/core/tcp_out.c \
         lwip/src/core/netif.c \
         lwip/src/core/def.c \
+        lwip/src/core/ip.c \
         lwip/src/core/mem.c \
         lwip/src/core/tcp_in.c \
         lwip/src/core/stats.c \
         lwip/src/core/inet_chksum.c \
+        lwip/src/core/timeouts.c \
         lwip/src/core/ipv4/icmp.c \
         lwip/src/core/ipv4/igmp.c \
         lwip/src/core/ipv4/ip4_addr.c \
-        lwip/src/core/ipv4/ip_frag.c \
+        lwip/src/core/ipv4/ip4_frag.c \
         lwip/src/core/ipv4/ip4.c \
         lwip/src/core/ipv4/autoip.c \
         lwip/src/core/ipv6/ethip6.c \
@@ -476,7 +425,3 @@ libpcre_src_files := \
 LOCAL_SRC_FILES := $(addprefix pcre/, $(libpcre_src_files)) $(LOCAL_PATH)/patch/pcre/pcre_chartables.c
 
 include $(BUILD_STATIC_LIBRARY)
-
-# Import cpufeatures
-$(call import-module,android/cpufeatures)
-

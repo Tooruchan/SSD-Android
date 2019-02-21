@@ -1,33 +1,54 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'com.vanniktech.maven.publish'
 
-apply from: 'gradle-mvn-push.gradle'
+@SuppressWarnings("GroovyUnusedDeclaration")
+def getRepositoryUsername() {
+    return hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
+}
+
+@SuppressWarnings("GroovyUnusedDeclaration")
+def getRepositoryPassword() {
+    return hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
+}
 
 android {
-    buildToolsVersion rootProject.buildToolsVersion
-    compileSdkVersion rootProject.compileSdkVersion
-
+    buildToolsVersion '28.0.3'
+    compileSdkVersion 28
     defaultConfig {
-        minSdkVersion rootProject.minSdkVersion
-        targetSdkVersion rootProject.sdkVersion
-        versionCode 7
-        versionName "0.2.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        minSdkVersion 21
+        targetSdkVersion 28
+        versionName VERSION_NAME
+        testInstrumentationRunner "androidx.testgetRepositoryPassword().runner.AndroidJUnitRunner"
     }
-
     buildTypes {
         release {
             minifyEnabled false
         }
     }
+    productFlavors {
+    }
+}
+
+androidExtensions {
+    experimental = true
+}
+
+mavenPublish {
+    targets {
+        uploadArchives {
+            releaseRepositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+            snapshotRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+            repositoryUsername = getRepositoryUsername()
+            repositoryPassword = getRepositoryPassword()
+        }
+    }
 }
 
 dependencies {
-    api "androidx.core:core-ktx:$androidxVersion"
-    api "androidx.preference:preference:$androidxVersion"
-    api "com.google.android.material:material:$androidxVersion"
-    api "com.takisoft.preferencex:preferencex:$preferencexVersion"
+    api 'androidx.core:core-ktx:1.0.1'
+    api 'com.google.android.material:material:1.1.0-alpha03'
     api "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test:runner:$androidTestVersion"

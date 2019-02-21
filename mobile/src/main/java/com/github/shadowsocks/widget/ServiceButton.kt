@@ -75,7 +75,6 @@ class ServiceButton @JvmOverloads constructor(context: Context, attrs: Attribute
             BaseService.STOPPING -> changeState(iconStopping, animate)
             else -> changeState(iconStopped, animate)
         }
-
         if (state == BaseService.CONNECTED) {
             checked = true
             TooltipCompat.setTooltipText(this, context.getString(R.string.stop))

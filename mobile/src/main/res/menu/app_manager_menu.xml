@@ -4,20 +4,18 @@
     <item android:id="@+id/action_apply_all"
           android:title="@string/action_apply_all"
           android:alphabeticShortcut="a"
-          android:numericShortcut="1"
+        app:alphabeticModifiers="CTRL|SHIFT"
           app:showAsAction="never"/>
     <item
         android:id="@+id/action_export_clipboard"
-        android:alphabeticShortcut="e"
+        android:alphabeticShortcut="c"
         android:icon="?attr/actionModeCopyDrawable"
-        android:numericShortcut="2"
         android:title="@string/action_export"
         app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/action_import_clipboard"
-        android:alphabeticShortcut="i"
+        android:alphabeticShortcut="v"
         android:icon="?attr/actionModePasteDrawable"
-        android:numericShortcut="3"
         android:title="@string/action_import"
         app:showAsAction="ifRoom"/>
 </menu>

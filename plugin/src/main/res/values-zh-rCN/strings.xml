@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<string name="proxy_cat">"服务器设置"</string>
+    <!-- SSD -->
+    <string name="subscriptions">订阅</string>
+    <!-- DSS -->
+
+    <string name="proxy_cat">"服务器设置"</string>
 <string name="feature_cat">"功能设置"</string>
 <string name="unsaved_changes_prompt">"是否要保存修改？"</string>
 <string name="yes">"是"</string>

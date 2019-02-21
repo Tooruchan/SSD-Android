@@ -5,7 +5,7 @@
 [shadowsocks-android](https://github.com/shadowsocks/shadowsocks-android)
 
 ShadowsocksD会跟随Shadowsocks更新代码。
-```  
+```
   *  ShadowsocksD中的广告收入依然归Shadowsocks项目作者所有，ShadowsocksD不会分取此收入
 ```
 
@@ -23,11 +23,11 @@ Android 5.0+
 
 ## Development - 开发
 
-\[Linux/MacOS\]
+\[Windows/Linux/MacOS\]
 
 ```
-  *  因Go还不支持在Windows平台上使用clang进行混合编译，所以如果想用Windows开发，需要先用[Linux/MacOS]将overturn预编译好，然后复制到Windows上
-```    
+因overturn已被取代移除，现已可以在Windows平台上进行编译
+```
 
 ## Open Source References - 开源引用
 ```
@@ -39,7 +39,6 @@ tun2socks (BSD)             https://github.com/shadowsocks/badvpn
 pcre (BSD)                  https://android.googlesource.com/platform/external/pcre/+/master/dist2
 libancillary (BSD)          https://github.com/shadowsocks/libancillary
 shadowsocks-libev (GPLv3)   https://github.com/shadowsocks/shadowsocks-libev
-overture (MIT)              https://github.com/shawn1m/overture
 libev (GPLv2)               https://github.com/shadowsocks/libev
 libsodium (ISC)             https://github.com/jedisct1/libsodium
 ```

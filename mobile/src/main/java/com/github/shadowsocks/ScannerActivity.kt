@@ -21,29 +21,28 @@
 package com.github.shadowsocks
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.ShortcutManager
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.util.SparseArray
+import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
-import androidx.core.app.TaskStackBuilder
 import androidx.core.content.getSystemService
 import androidx.core.util.forEach
 import com.crashlytics.android.Crashlytics
-import com.github.shadowsocks.App.Companion.app
 import com.github.shadowsocks.database.Profile
 import com.github.shadowsocks.database.ProfileManager
 import com.github.shadowsocks.utils.datas
 import com.github.shadowsocks.utils.openBitmap
 import com.github.shadowsocks.utils.printLog
-import com.github.shadowsocks.utils.resolveResourceId
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.samples.vision.barcodereader.BarcodeCapture
 import com.google.android.gms.samples.vision.barcodereader.BarcodeGraphic
@@ -52,7 +51,7 @@ import com.google.android.gms.vision.barcode.Barcode
 import com.google.android.gms.vision.barcode.BarcodeDetector
 import xyz.belvi.mobilevisionbarcodescanner.BarcodeRetriever
 
-class ScannerActivity : AppCompatActivity(), Toolbar.OnMenuItemClickListener, BarcodeRetriever {
+class ScannerActivity : AppCompatActivity(), BarcodeRetriever {
     companion object {
         private const val TAG = "ScannerActivity"
         private const val REQUEST_IMPORT = 2
@@ -62,10 +61,12 @@ class ScannerActivity : AppCompatActivity(), Toolbar.OnMenuItemClickListener, Ba
 
     private lateinit var detector: BarcodeDetector
 
-    private fun navigateUp() {
-        val intent = parentActivityIntent
-        if (intent == null || !shouldUpRecreateTask(intent) && !isTaskRoot) finish() else
-            TaskStackBuilder.create(this).addNextIntentWithParentStack(intent).startActivities()
+    private fun fallback() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=tw.com.quickmark")))
+        } catch (_: ActivityNotFoundException) {
+        }
+        finish()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,9 +81,9 @@ class ScannerActivity : AppCompatActivity(), Toolbar.OnMenuItemClickListener, Ba
             if (dialog == null) {
                 Toast.makeText(this, R.string.common_google_play_services_notification_ticker, Toast.LENGTH_SHORT)
                         .show()
-                finish()
+                fallback()
             } else {
-                dialog.setOnDismissListener { finish() }
+                dialog.setOnDismissListener { fallback() }
                 dialog.show()
             }
             return
@@ -97,20 +98,16 @@ class ScannerActivity : AppCompatActivity(), Toolbar.OnMenuItemClickListener, Ba
             return
         }
         setContentView(R.layout.layout_scanner)
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        toolbar.title = title
-        toolbar.setNavigationIcon(theme.resolveResourceId(R.attr.homeAsUpIndicator))
-        toolbar.setNavigationOnClickListener { navigateUp() }
-        toolbar.inflateMenu(R.menu.scanner_menu)
-        toolbar.setOnMenuItemClickListener(this)
+        setSupportActionBar(findViewById(R.id.toolbar))
+        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         val capture = supportFragmentManager.findFragmentById(R.id.barcode) as BarcodeCapture
         capture.setCustomDetector(detector)
         capture.setRetrieval(this)
     }
 
     override fun onRetrieved(barcode: Barcode) = runOnUiThread {
-        Profile.findAllUrls(barcode.rawValue, app.currentProfile).forEach { ProfileManager.createProfile(it) }
-        navigateUp()
+        Profile.findAllUrls(barcode.rawValue, Core.currentProfile?.first).forEach { ProfileManager.createProfile(it) }
+        onSupportNavigateUp()
     }
     override fun onRetrievedMultiple(closetToClick: Barcode?, barcode: MutableList<BarcodeGraphic>?) = check(false)
     override fun onBitmapScanned(sparseArray: SparseArray<Barcode>?) { }
@@ -120,7 +117,12 @@ class ScannerActivity : AppCompatActivity(), Toolbar.OnMenuItemClickListener, Ba
         startImport()
     }
 
-    override fun onMenuItemClick(item: MenuItem) = when (item.itemId) {
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.scanner_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?) = when (item?.itemId) {
         R.id.action_import_clipboard -> {
             startImport(true)
             true
@@ -136,7 +138,7 @@ class ScannerActivity : AppCompatActivity(), Toolbar.OnMenuItemClickListener, Ba
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             REQUEST_IMPORT, REQUEST_IMPORT_OR_FINISH -> if (resultCode == Activity.RESULT_OK) {
-                val feature = app.currentProfile
+                val feature = Core.currentProfile?.first
                 var success = false
                 for (uri in data!!.datas) try {
                     detector.detect(Frame.Builder().setBitmap(contentResolver.openBitmap(uri)).build())
@@ -151,8 +153,8 @@ class ScannerActivity : AppCompatActivity(), Toolbar.OnMenuItemClickListener, Ba
                 }
                 Toast.makeText(this, if (success) R.string.action_import_msg else R.string.action_import_err,
                         Toast.LENGTH_SHORT).show()
-                navigateUp()
-            } else if (requestCode == REQUEST_IMPORT_OR_FINISH) navigateUp()
+                onSupportNavigateUp()
+            } else if (requestCode == REQUEST_IMPORT_OR_FINISH) onSupportNavigateUp()
             else -> super.onActivityResult(requestCode, resultCode, data)
         }
     }

@@ -22,10 +22,7 @@ package com.github.shadowsocks
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
@@ -33,6 +30,7 @@ import android.os.AsyncTask
 import android.os.Bundle
 import android.text.format.Formatter
 import android.util.Base64
+import android.util.LongSparseArray
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
@@ -43,7 +41,7 @@ import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.*
-import com.github.shadowsocks.App.Companion.app
+import com.github.shadowsocks.aidl.TrafficStats
 import com.github.shadowsocks.bg.BaseService
 import com.github.shadowsocks.database.Profile
 import com.github.shadowsocks.database.ProfileManager
@@ -68,12 +66,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import kotlin.collections.ArrayList
 
 class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
     companion object {
         /**
-         * used for callback from ProfileManager and stateChanged from MainActivity
+         * used for callback from stateChanged from MainActivity
          */
         var instance: ProfilesFragment? = null
 
@@ -90,9 +87,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             BaseService.CONNECTED, BaseService.STOPPED -> true
             else -> false
         }
-
     private fun isProfileEditable(id: Long) = when ((activity as MainActivity).state) {
-        BaseService.CONNECTED -> id != DataStore.profileId
+        BaseService.CONNECTED -> id !in Core.activeProfileIds
         BaseService.STOPPED -> true
         else -> false
     }
@@ -115,7 +111,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             return image
         }
 
-        override fun onAttach(context: Context?) {
+        override fun onAttach(context: Context) {
             super.onAttach(context)
             val adapter = NfcAdapter.getDefaultAdapter(context)
             adapter?.setNdefPushMessage(NdefMessage(arrayOf(
@@ -166,7 +162,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             edit.alpha = if (editable) 1F else .5F
             var tx = item.tx
             var rx = item.rx
-            if (item.id == bandwidthProfile) {
+            statsCache[item.id]?.apply {
                 tx += txTotal
                 rx += rxTotal
             }
@@ -181,7 +177,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             text2.text = ArrayList<String>().apply {
                 if (!item.name.isNullOrEmpty()) this += item.formattedAddress
                 val id = PluginConfiguration(item.plugin ?: "").selected
-                if (id.isNotEmpty()) this += app.getString(R.string.profile_plugin, id)
+                if (id.isNotEmpty()) this += getString(R.string.profile_plugin, id)
             }.joinToString("\n")
             val context = requireContext()
             traffic.text = if (tx <= 0 && rx <= 0) null else getString(R.string.traffic,
@@ -226,13 +222,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             if (isEnabled) {
                 val activity = activity as MainActivity
                 val old = DataStore.profileId
-                app.switchProfile(item.id)
+                Core.switchProfile(item.id)
                 profilesAdapter.refreshId(old)
                 //region SSD
                 subscriptionsAdapter.refreshProfileId(old)
                 //endregion
                 itemView.isSelected = true
-                if (activity.state == BaseService.CONNECTED) app.reloadService()
+                if (activity.state == BaseService.CONNECTED) Core.reloadService()
             }
         }
 
@@ -250,8 +246,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         }
     }
 
-
-    inner class ProfilesAdapter : RecyclerView.Adapter<ProfileViewHolder>() {
+    inner class ProfilesAdapter : RecyclerView.Adapter<ProfileViewHolder>(), ProfileManager.Listener {
         //region SSD
         //internal val profiles = ProfileManager.getAllProfiles()?.toMutableList() ?: mutableListOf()
         internal val profiles = ProfileManager.getSubscription(0)?.toMutableList()
@@ -264,8 +259,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 refreshId(it.id)
             }
         }
-
         //endregion
+
         private val updated = HashSet<Profile>()
 
         init {
@@ -273,18 +268,19 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         }
 
         override fun onBindViewHolder(holder: ProfileViewHolder, position: Int) = holder.bind(profiles[position])
-
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProfileViewHolder = ProfileViewHolder(
                 LayoutInflater.from(parent.context).inflate(R.layout.layout_profile, parent, false))
-
         override fun getItemCount(): Int = profiles.size
         override fun getItemId(position: Int): Long = profiles[position].id
 
-        fun add(item: Profile) {
+        override fun onAdd(profile: Profile) {
             undoManager.flush()
             val pos = itemCount
-            profiles += item
+            profiles += profile
             notifyItemInserted(pos)
+            //region SSD
+            checkVisible()
+            //endregion
         }
 
         fun move(from: Int, to: Int) {
@@ -305,7 +301,6 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             updated.add(first)
             notifyItemMoved(from, to)
         }
-
         fun commitMove() {
             updated.forEach { ProfileManager.updateProfile(it) }
             updated.clear()
@@ -315,14 +310,12 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             profiles.removeAt(pos)
             notifyItemRemoved(pos)
         }
-
         fun undo(actions: List<Pair<Int, Profile>>) {
             for ((index, item) in actions) {
                 profiles.add(index, item)
                 notifyItemInserted(index)
             }
         }
-
         fun commit(actions: List<Pair<Int, Profile>>) {
             for ((_, item) in actions) ProfileManager.delProfile(item.id)
         }
@@ -331,7 +324,6 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             val index = profiles.indexOfFirst { it.id == id }
             if (index >= 0) notifyItemChanged(index)
         }
-
         fun deepRefreshId(id: Long) {
             val index = profiles.indexOfFirst { it.id == id }
             if (index < 0) return
@@ -339,12 +331,23 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             notifyItemChanged(index)
         }
 
-        fun removeId(id: Long) {
-            val index = profiles.indexOfFirst { it.id == id }
+        override fun onRemove(profileId: Long) {
+            val index = profiles.indexOfFirst { it.id == profileId }
             if (index < 0) return
             profiles.removeAt(index)
             notifyItemRemoved(index)
-            if (id == DataStore.profileId) DataStore.profileId = 0  // switch to null profile
+            if (profileId == DataStore.profileId) DataStore.profileId = 0   // switch to null profile
+            //region SSD
+            val subscriptionId = ProfileManager.getProfile(profileId)?.subscription
+            if (subscriptionId != null && subscriptionId != 0L) {
+                val subscriptionList = ProfileManager.getSubscription(subscriptionId)
+                if (subscriptionList != null && subscriptionList.isEmpty()) {
+                    subscriptionsAdapter.onRemove(subscriptionId)
+                } else {
+                    subscriptionsAdapter.refreshSubscriptionId(subscriptionId)
+                }
+            }
+            //endregion
         }
     }
 
@@ -369,6 +372,11 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
             TooltipCompat.setTooltipText(edit, edit.contentDescription)
 
+            val share = itemView.findViewById<View>(R.id.share)
+            share.setOnClickListener {
+                clipboard.primaryClip = ClipData.newPlainText(null, item.url)
+                Toast.makeText(requireContext(), "url", Toast.LENGTH_SHORT).show()
+            }
             serverDroplist.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onNothingSelected(parent: AdapterView<*>?) {
 
@@ -385,13 +393,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                             DataStore.profileId != item.selectedProfileId) {
                         val activity = activity as MainActivity
                         val oldProfile = DataStore.profileId
-                        app.switchProfile(item.selectedProfileId)
+                        Core.switchProfile(item.selectedProfileId)
                         profilesAdapter.refreshId(oldProfile)
                         subscriptionsAdapter.refreshProfileId(oldProfile)
                         //reloadService() will call onItemSelected() again
                         itemView.isSelected = true
                         if (activity.state == BaseService.CONNECTED) {
-                            app.reloadService()
+                            Core.reloadService()
                         }
                     }
                 }
@@ -399,12 +407,12 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             itemView.setOnClickListener {
                 val activity = activity as MainActivity
                 val oldProfile = DataStore.profileId
-                app.switchProfile(item.selectedProfileId)
+                Core.switchProfile(item.selectedProfileId)
                 profilesAdapter.refreshId(oldProfile)
                 subscriptionsAdapter.refreshProfileId(oldProfile)
                 itemView.isSelected = true
                 if (activity.state == BaseService.CONNECTED) {
-                    app.reloadService()
+                    Core.reloadService()
                 }
             }
         }
@@ -449,10 +457,17 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
             var tx = selectedProfile.tx
             var rx = selectedProfile.rx
-            if (item.id == bandwidthProfile) {
+            statsCache[item.id]?.apply {
                 tx += txTotal
                 rx += rxTotal
             }
+
+            //todo ssd: complete text2
+            /*text2.text = ArrayList<String>().apply {
+                if (!item.name.isNullOrEmpty()) this += item.formattedAddress
+                val id = PluginConfiguration(item.plugin ?: "").selected
+                if (id.isNotEmpty()) this += getString(R.string.profile_plugin, id)
+            }.joinToString("\n")*/
 
             val context = requireContext()
             traffic.text = if (tx <= 0 && rx <= 0) null else getString(R.string.traffic,
@@ -493,12 +508,12 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         }
     }
 
-    inner class ProfileSubscriptionsAdapter : RecyclerView.Adapter<ProfileSubscriptionViewHolder>() {
+    inner class ProfileSubscriptionsAdapter : RecyclerView.Adapter<ProfileSubscriptionViewHolder>(), SubscriptionManager.Listener {
         internal val subscriptions = SubscriptionManager.getAllSubscriptions()?.toMutableList()
                 ?: mutableListOf()
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProfileSubscriptionViewHolder = ProfileSubscriptionViewHolder(
-                LayoutInflater.from(parent.context).inflate(R.layout.layout_main_subscription, parent, false))
+                LayoutInflater.from(parent.context).inflate(R.layout.layout_subscription, parent, false))
 
         override fun getItemCount(): Int = subscriptions.size
         override fun getItemId(position: Int): Long = subscriptions[position].id
@@ -512,10 +527,11 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
         }
 
-        fun add(item: Subscription) {
+        override fun onAdd(subscription: Subscription) {
             val pos = itemCount
-            subscriptions += item
+            subscriptions += subscription
             notifyItemInserted(pos)
+            checkVisible()
         }
 
         fun remove(pos: Int) {
@@ -525,13 +541,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             notifyItemRemoved(pos)
         }
 
-        fun removeSubscriptionId(id: Long) {
-            val index = subscriptions.indexOfFirst { it.id == id }
+        override fun onRemove(subscriptionId: Long) {
+            val index = subscriptions.indexOfFirst { it.id == subscriptionId }
             if (index < 0) return
-            SubscriptionManager.delSubscriptionWithProfiles(id)
+            SubscriptionManager.delSubscriptionWithProfiles(subscriptionId)
             subscriptions.removeAt(index)
             notifyItemRemoved(index)
-            if (id == ProfileManager.getProfile(DataStore.profileId)?.subscription) {
+            if (subscriptionId == ProfileManager.getProfile(DataStore.profileId)?.subscription) {
                 DataStore.profileId = 0
             }
         }
@@ -686,7 +702,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 var oldSelectedServer: Profile? = null
                 if (oldSubscription != null) {
                     oldSelectedServer = ProfileManager.getProfile(oldSubscription.selectedProfileId)
-                    addSubscriptionsAdapter.removeSubscriptionId(oldSubscription.id)
+                    addSubscriptionsAdapter.onRemove(oldSubscription.id)
                 }
 
                 jsonObject.optJSONArray("servers")?.let {
@@ -731,7 +747,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     }
                 }
                 SubscriptionManager.updateSubscription(newSubscription)
-                addSubscriptionsAdapter.add(newSubscription)
+                addSubscriptionsAdapter.onAdd(newSubscription)
                 val messageShow = parseContext?.getString(R.string.message_subscribe_success)
                 Toast.makeText(parseContext, messageShow, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
@@ -814,9 +830,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
     val profilesAdapter by lazy { ProfilesAdapter() }
     private lateinit var undoManager: UndoSnackbarManager<Profile>
-    private var bandwidthProfile = 0L
-    private var txTotal: Long = 0L
-    private var rxTotal: Long = 0L
+    private val statsCache = LongSparseArray<TrafficStats>()
 
     private val clipboard by lazy { requireContext().getSystemService<ClipboardManager>()!! }
 
@@ -834,7 +848,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         toolbar.inflateMenu(R.menu.profile_manager_menu)
         toolbar.setOnMenuItemClickListener(this)
 
-        if (!ProfileManager.isNotEmpty()) DataStore.profileId = ProfileManager.createProfile().id
+        ProfileManager.ensureNotEmpty()
         val profilesList = view.findViewById<RecyclerView>(R.id.list)
         val layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
         profilesList.layoutManager = layoutManager
@@ -844,15 +858,14 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         animator.supportsChangeAnimations = false // prevent fading-in/out when rebinding
         profilesList.itemAnimator = animator
         profilesList.adapter = profilesAdapter
-
         instance = this
+        ProfileManager.listener = profilesAdapter
         undoManager = UndoSnackbarManager(activity as MainActivity, profilesAdapter::undo, profilesAdapter::commit)
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN,
                 ItemTouchHelper.START or ItemTouchHelper.END) {
             override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
                     if (isProfileEditable((viewHolder as ProfileViewHolder).item.id))
                         super.getSwipeDirs(recyclerView, viewHolder) else 0
-
             override fun getDragDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
                     if (isEnabled) super.getDragDirs(recyclerView, viewHolder) else 0
 
@@ -861,19 +874,16 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 profilesAdapter.remove(index)
                 undoManager.remove(Pair(index, (viewHolder as ProfileViewHolder).item))
             }
-
             override fun onMove(recyclerView: RecyclerView,
                                 viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
                 profilesAdapter.move(viewHolder.adapterPosition, target.adapterPosition)
                 return true
             }
-
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
                 profilesAdapter.commitMove()
             }
         }).attachToRecyclerView(profilesList)
-
         //region SSD
         val subscriptionsList = view.findViewById<RecyclerView>(R.id.list_subscription)
         val subscriptionLayoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
@@ -909,8 +919,10 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
             R.id.action_import_clipboard -> {
                 try {
-                    val profiles = Profile.findAllUrls(clipboard.primaryClip!!.getItemAt(0).text, app.currentProfile)
-                            .toList()
+                    val profiles = Profile.findAllUrls(
+                            clipboard.primaryClip!!.getItemAt(0).text,
+                            Core.currentProfile?.first
+                    ).toList()
                     if (profiles.isNotEmpty()) {
                         profiles.forEach { ProfileManager.createProfile(it) }
                         (activity as MainActivity).snackbar().setText(R.string.action_import_msg).show()
@@ -923,16 +935,17 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 true
             }
             R.id.action_import_file -> {
-                startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).apply {
+                startFilesForResult(Intent(Intent.ACTION_GET_CONTENT).apply {
                     addCategory(Intent.CATEGORY_OPENABLE)
-                    type = "application/json"
+                    type = "application/*"
                     putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/*", "text/*"))
                 }, REQUEST_IMPORT_PROFILES)
                 true
             }
             R.id.action_manual_settings -> {
                 startConfig(ProfileManager.createProfile(
-                        Profile().also { app.currentProfile?.copyFeatureSettingsTo(it) }))
+                        Profile().also { Core.currentProfile?.first?.copyFeatureSettingsTo(it) }))
                 true
             }
             //region SSD
@@ -1021,7 +1034,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 true
             }
             R.id.action_export_file -> {
-                startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                startFilesForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                     addCategory(Intent.CATEGORY_OPENABLE)
                     type = "application/json"
                     putExtra(Intent.EXTRA_TITLE, "profiles.json")   // optional title that can be edited
@@ -1032,16 +1045,26 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         }
     }
 
+    private fun startFilesForResult(intent: Intent?, requestCode: Int) {
+        try {
+            startActivityForResult(intent, requestCode)
+            return
+        } catch (_: ActivityNotFoundException) {
+        } catch (_: SecurityException) {
+        }
+        (activity as MainActivity).snackbar(getString(R.string.file_manager_missing)).show()
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode != Activity.RESULT_OK) super.onActivityResult(requestCode, resultCode, data)
         else when (requestCode) {
             REQUEST_IMPORT_PROFILES -> {
-                val feature = app.currentProfile
+                val feature = Core.currentProfile?.first
                 var success = false
                 val activity = activity as MainActivity
                 for (uri in data!!.datas) try {
                     Profile.parseJson(activity.contentResolver.openInputStream(uri)!!.bufferedReader().readText(),
-                            feature).forEach {
+                            feature) {
                         ProfileManager.createProfile(it)
                         success = true
                     }
@@ -1054,8 +1077,9 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             REQUEST_EXPORT_PROFILES -> {
                 val profiles = ProfileManager.getAllProfiles()
                 if (profiles != null) try {
+                    val lookup = LongSparseArray<Profile>(profiles.size).apply { profiles.forEach { put(it.id, it) } }
                     requireContext().contentResolver.openOutputStream(data?.data!!)!!.bufferedWriter().use {
-                        it.write(JSONArray(profiles.map { it.toJson() }.toTypedArray()).toString(2))
+                        it.write(JSONArray(profiles.map { it.toJson(lookup) }.toTypedArray()).toString(2))
                     }
                 } catch (e: Exception) {
                     printLog(e)
@@ -1066,26 +1090,14 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         }
     }
 
-    override fun onTrafficUpdated(profileId: Long, txRate: Long, rxRate: Long, txTotal: Long, rxTotal: Long) {
-        if (profileId != -1L) { // ignore resets from MainActivity
-            if (bandwidthProfile != profileId) {
-                onTrafficPersisted(bandwidthProfile)
-                bandwidthProfile = profileId
-            }
-            this.txTotal = txTotal
-            this.rxTotal = rxTotal
+    override fun onTrafficUpdated(profileId: Long, stats: TrafficStats) {
+        if (profileId != 0L) {  // ignore aggregate stats
+            statsCache.put(profileId, stats)
             profilesAdapter.refreshId(profileId)
-            //todo: support subscription
         }
     }
-
     fun onTrafficPersisted(profileId: Long) {
-        txTotal = 0
-        rxTotal = 0
-        if (bandwidthProfile != profileId) {
-            onTrafficPersisted(bandwidthProfile)
-            bandwidthProfile = profileId
-        }
+        statsCache.remove(profileId)
         profilesAdapter.deepRefreshId(profileId)
     }
 
@@ -1096,6 +1108,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
     override fun onDestroy() {
         instance = null
+        ProfileManager.listener = null
         super.onDestroy()
     }
 }

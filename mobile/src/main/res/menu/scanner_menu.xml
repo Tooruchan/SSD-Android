@@ -4,7 +4,6 @@
     <item android:id="@+id/action_import_clipboard"
           android:title="@string/action_import_file"
           android:icon="@drawable/ic_image_photo"
-          android:alphabeticShortcut="p"
-          android:numericShortcut="1"
+        android:alphabeticShortcut="o"
           app:showAsAction="always"/>
 </menu>

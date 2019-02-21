@@ -24,12 +24,12 @@ import android.os.Build
 import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.SwitchPreference
-import com.github.shadowsocks.App.Companion.app
 import com.github.shadowsocks.bg.BaseService
+import com.github.shadowsocks.net.TcpFastOpen
 import com.github.shadowsocks.preference.DataStore
 import com.github.shadowsocks.utils.DirectBoot
 import com.github.shadowsocks.utils.Key
-import com.github.shadowsocks.utils.TcpFastOpen
+import com.github.shadowsocks.utils.remove
 import com.takisoft.preferencex.PreferenceFragmentCompat
 
 class GlobalSettingsPreferenceFragment : PreferenceFragmentCompat() {
@@ -43,20 +43,24 @@ class GlobalSettingsPreferenceFragment : PreferenceFragmentCompat() {
             true
         }
         boot.isChecked = BootReceiver.enabled
+        if (Build.VERSION.SDK_INT >= 24) boot.setSummary(R.string.auto_connect_summary_v24)
 
         val canToggleLocked = findPreference(Key.directBootAware)
         if (Build.VERSION.SDK_INT >= 24) canToggleLocked.setOnPreferenceChangeListener { _, newValue ->
-            if (app.directBootSupported && newValue as Boolean) DirectBoot.update() else DirectBoot.clean()
+            if (Core.directBootSupported && newValue as Boolean) DirectBoot.update() else DirectBoot.clean()
             true
-        } else canToggleLocked.parent!!.removePreference(canToggleLocked)
+        } else canToggleLocked.remove()
 
         val tfo = findPreference(Key.tfo) as SwitchPreference
         tfo.isChecked = DataStore.tcpFastOpen
         tfo.setOnPreferenceChangeListener { _, value ->
-            if (value as Boolean) {
-                val result = TcpFastOpen.enabled(true)
-                if (result != null && result != "Success.") (activity as MainActivity).snackbar(result).show()
-                TcpFastOpen.sendEnabled
+            if (value as Boolean && !TcpFastOpen.sendEnabled) {
+                val result = TcpFastOpen.enable()?.trim()
+                if (TcpFastOpen.sendEnabled) true else {
+                    (activity as MainActivity).snackbar(
+                            if (result.isNullOrEmpty()) getText(R.string.tcp_fastopen_failure) else result).show()
+                    false
+                }
             } else true
         }
         if (!TcpFastOpen.supported) {
@@ -80,18 +84,17 @@ class GlobalSettingsPreferenceFragment : PreferenceFragmentCompat() {
             true
         }
         val listener: (Int) -> Unit = {
-            when (it) {
-                BaseService.IDLE, BaseService.STOPPED -> {
-                    serviceMode.isEnabled = true
-                    portProxy.isEnabled = true
-                    onServiceModeChange.onPreferenceChange(null, DataStore.serviceMode)
-                }
-                else -> {
-                    serviceMode.isEnabled = false
-                    portProxy.isEnabled = false
-                    portLocalDns.isEnabled = false
-                    portTransproxy.isEnabled = false
-                }
+            if (it == BaseService.STOPPED) {
+                tfo.isEnabled = true
+                serviceMode.isEnabled = true
+                portProxy.isEnabled = true
+                onServiceModeChange.onPreferenceChange(null, DataStore.serviceMode)
+            } else {
+                tfo.isEnabled = false
+                serviceMode.isEnabled = false
+                portProxy.isEnabled = false
+                portLocalDns.isEnabled = false
+                portTransproxy.isEnabled = false
             }
         }
         listener((activity as MainActivity).state)
