@@ -4,6 +4,9 @@
               android:icon="@drawable/ic_qu_shadowsocks_launcher"
               android:shortcutShortLabel="@string/quick_toggle"
               android:shortcutLongLabel="@string/quick_toggle">
+        <!-- SSD -->
+        <!-- android:targetPackage="com.github.shadowsocksd" -->
+        <!-- DSS -->
         <intent android:action="android.intent.action.MAIN"
                 android:targetPackage="com.github.shadowsocksd"
                 android:targetClass="com.github.shadowsocks.QuickToggleShortcut" />
@@ -12,6 +15,9 @@
               android:icon="@drawable/ic_qu_camera_launcher"
               android:shortcutShortLabel="@string/add_profile_methods_scan_qr_code"
               android:shortcutLongLabel="@string/add_profile_methods_scan_qr_code">
+        <!-- SSD -->
+        <!-- android:targetPackage="com.github.shadowsocksd" -->
+        <!-- DSS -->
         <intent android:action="android.intent.action.MAIN"
                 android:targetPackage="com.github.shadowsocksd"
                 android:targetClass="com.github.shadowsocks.ScannerActivity" />

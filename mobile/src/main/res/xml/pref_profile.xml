@@ -91,8 +91,11 @@
             android:key="udpFallback"
             android:title="@string/udp_fallback"
             android:summary="@string/plugin_disabled">
+            <!-- SSD -->
+            <!-- android:targetPackage="com.github.shadowsocksd" -->
+            <!-- DSS -->
             <intent
-                android:targetPackage="com.github.shadowsocks"
+                android:targetPackage="com.github.shadowsocksd"
                 android:targetClass="com.github.shadowsocks.UdpFallbackProfileActivity" />
         </Preference>
 
