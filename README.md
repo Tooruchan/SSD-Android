@@ -29,6 +29,8 @@ Android 5.0+
 因overturn已被取代移除，现已可以在Windows平台上进行编译
 ```
 
+需使用`git clone --recurse-submodules <repo>`或 `git submodule update --init --recursive`进行初始化
+
 ## Open Source References - 开源引用
 ```
 shadowsocks-android (GPLv3) https://github.com/shadowsocks/shadowsocks-android
