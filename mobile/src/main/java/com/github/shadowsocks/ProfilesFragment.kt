@@ -569,7 +569,6 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             if (index < 0) return
             subscriptions[index] = SubscriptionManager.getSubscription(id)!!
             notifyItemChanged(index)
-
         }
     }
 
@@ -655,6 +654,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         var urlParse = ""
         var parseContext: Context? = null
         lateinit var addSubscriptionsAdapter: ProfileSubscriptionsAdapter
+
         override fun doInBackground(vararg params: Unit): String {
             var urlResult = ""
             urlParse = urlParse.trim()
@@ -669,8 +669,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
             if (result.isNullOrBlank()) {
-                val messageShow = parseContext?.getString(R.string.message_subscribe_fail)
-                Toast.makeText(parseContext, messageShow, Toast.LENGTH_SHORT).show()
+                Toast.makeText(parseContext, parseContext?.getString(R.string.message_subscribe_fail), Toast.LENGTH_SHORT).show()
                 return
             }
 
@@ -775,8 +774,6 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                         Toast.makeText(context, messageShow, Toast.LENGTH_SHORT).show()
 
                         val singleThreadExecutor = Executors.newSingleThreadExecutor()
-                        subscriptionsAdapter.lockEdit(false)
-                        profilesAdapter.lockEdit(false)
                         ParseURL().apply {
                             urlParse = editText.text.toString()
                             parseContext = context
@@ -950,15 +947,31 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
             //region SSD
             R.id.action_add_subscription -> {
+                if(!subscriptionsAdapter.lockEditable){
+                    Toast.makeText(context,getString(R.string.message_profiles_being_used),Toast.LENGTH_SHORT).show()
+                    return true
+                }
+                subscriptionsAdapter.lockEdit(false)
+
                 AddSubscriptionDialog().show()
                 true
             }
             R.id.action_update_subscription -> {
+                if((activity as MainActivity).state!=BaseService.STOPPED){
+                    Toast.makeText(context,getString(R.string.message_disconnect_first),Toast.LENGTH_SHORT).show()
+                    return true
+                }
+
+                if(!subscriptionsAdapter.lockEditable){
+                    Toast.makeText(context,getString(R.string.message_profiles_being_used),Toast.LENGTH_SHORT).show()
+                    return true
+                }
+                subscriptionsAdapter.lockEdit(false)
+
                 val messageShow = getString(R.string.message_updating_subscription)
                 Toast.makeText(context, messageShow, Toast.LENGTH_SHORT).show()
 
                 val singleThreadExecutor = Executors.newSingleThreadExecutor()
-                subscriptionsAdapter.lockEdit(false)
                 SubscriptionManager.getAllSubscriptions()?.forEach {
                     ParseURL().apply {
                         urlParse = it.url
@@ -975,13 +988,17 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
             R.id.action_tcping_latency -> {
                 if((activity as MainActivity).state!=BaseService.STOPPED){
-                    Toast.makeText(context,getString(R.string.message_tcping_latency_unavailable),Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context,getString(R.string.message_disconnect_first),Toast.LENGTH_SHORT).show()
                     return true
                 }
 
-                if(!profilesAdapter.lockEditable||!subscriptionsAdapter.lockEditable){
+                if(!subscriptionsAdapter.lockEditable||!profilesAdapter.lockEditable){
+                    Toast.makeText(context,getString(R.string.message_profiles_being_used),Toast.LENGTH_SHORT).show()
                     return true
                 }
+                subscriptionsAdapter.lockEdit(false)
+                profilesAdapter.lockEdit(false)
+
                 val profileListWithOrder = mutableListOf<Profile>()
                 SubscriptionManager.getAllSubscriptions()?.forEach {
                     val subscriptionProfile = ProfileManager.getSubscription(it.id)
@@ -1006,8 +1023,6 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 }
 
                 val singleThreadExecutor = Executors.newSingleThreadExecutor()
-                subscriptionsAdapter.lockEdit(false)
-                profilesAdapter.lockEdit(false)
 
                 profileListWithOrder.forEach {
                     TcpingLatency().apply {
