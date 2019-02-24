@@ -87,6 +87,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             BaseService.CONNECTED, BaseService.STOPPED -> true
             else -> false
         }
+
     private fun isProfileEditable(id: Long) = when ((activity as MainActivity).state) {
         BaseService.CONNECTED -> id !in Core.activeProfileIds
         BaseService.STOPPED -> true
@@ -270,6 +271,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         override fun onBindViewHolder(holder: ProfileViewHolder, position: Int) = holder.bind(profiles[position])
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProfileViewHolder = ProfileViewHolder(
                 LayoutInflater.from(parent.context).inflate(R.layout.layout_profile, parent, false))
+
         override fun getItemCount(): Int = profiles.size
         override fun getItemId(position: Int): Long = profiles[position].id
 
@@ -301,6 +303,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             updated.add(first)
             notifyItemMoved(from, to)
         }
+
         fun commitMove() {
             updated.forEach { ProfileManager.updateProfile(it) }
             updated.clear()
@@ -310,12 +313,14 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             profiles.removeAt(pos)
             notifyItemRemoved(pos)
         }
+
         fun undo(actions: List<Pair<Int, Profile>>) {
             for ((index, item) in actions) {
                 profiles.add(index, item)
                 notifyItemInserted(index)
             }
         }
+
         fun commit(actions: List<Pair<Int, Profile>>) {
             for ((_, item) in actions) ProfileManager.delProfile(item.id)
         }
@@ -324,6 +329,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             val index = profiles.indexOfFirst { it.id == id }
             if (index >= 0) notifyItemChanged(index)
         }
+
         fun deepRefreshId(id: Long) {
             val index = profiles.indexOfFirst { it.id == id }
             if (index < 0) return
@@ -615,7 +621,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
         override fun doInBackground(vararg params: Unit?): Int {
             publishProgress(0)
-            if(mainActivity.state!=BaseService.STOPPED){
+            if (mainActivity.state != BaseService.STOPPED) {
                 return Profile.LATENCY_ERROR
             }
             val tcpingSocket = Socket(Proxy.NO_PROXY)
@@ -863,6 +869,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
                     if (isProfileEditable((viewHolder as ProfileViewHolder).item.id))
                         super.getSwipeDirs(recyclerView, viewHolder) else 0
+
             override fun getDragDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
                     if (isEnabled) super.getDragDirs(recyclerView, viewHolder) else 0
 
@@ -871,11 +878,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 profilesAdapter.remove(index)
                 undoManager.remove(Pair(index, (viewHolder as ProfileViewHolder).item))
             }
+
             override fun onMove(recyclerView: RecyclerView,
                                 viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
                 profilesAdapter.move(viewHolder.adapterPosition, target.adapterPosition)
                 return true
             }
+
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
                 profilesAdapter.commitMove()
@@ -947,8 +956,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
             //region SSD
             R.id.action_add_subscription -> {
-                if(!subscriptionsAdapter.lockEditable){
-                    Toast.makeText(context,getString(R.string.message_profiles_being_used),Toast.LENGTH_SHORT).show()
+                if (!subscriptionsAdapter.lockEditable) {
+                    Toast.makeText(context, getString(R.string.message_profiles_being_used), Toast.LENGTH_SHORT).show()
                     return true
                 }
                 subscriptionsAdapter.lockEdit(false)
@@ -957,13 +966,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 true
             }
             R.id.action_update_subscription -> {
-                if((activity as MainActivity).state!=BaseService.STOPPED){
-                    Toast.makeText(context,getString(R.string.message_disconnect_first),Toast.LENGTH_SHORT).show()
+                if ((activity as MainActivity).state != BaseService.STOPPED) {
+                    Toast.makeText(context, getString(R.string.message_disconnect_first), Toast.LENGTH_SHORT).show()
                     return true
                 }
 
-                if(!subscriptionsAdapter.lockEditable){
-                    Toast.makeText(context,getString(R.string.message_profiles_being_used),Toast.LENGTH_SHORT).show()
+                if (!subscriptionsAdapter.lockEditable) {
+                    Toast.makeText(context, getString(R.string.message_profiles_being_used), Toast.LENGTH_SHORT).show()
                     return true
                 }
                 subscriptionsAdapter.lockEdit(false)
@@ -987,13 +996,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
 
             R.id.action_tcping_latency -> {
-                if((activity as MainActivity).state!=BaseService.STOPPED){
-                    Toast.makeText(context,getString(R.string.message_disconnect_first),Toast.LENGTH_SHORT).show()
+                if ((activity as MainActivity).state != BaseService.STOPPED) {
+                    Toast.makeText(context, getString(R.string.message_disconnect_first), Toast.LENGTH_SHORT).show()
                     return true
                 }
 
-                if(!subscriptionsAdapter.lockEditable||!profilesAdapter.lockEditable){
-                    Toast.makeText(context,getString(R.string.message_profiles_being_used),Toast.LENGTH_SHORT).show()
+                if (!subscriptionsAdapter.lockEditable || !profilesAdapter.lockEditable) {
+                    Toast.makeText(context, getString(R.string.message_profiles_being_used), Toast.LENGTH_SHORT).show()
                     return true
                 }
                 subscriptionsAdapter.lockEdit(false)
@@ -1026,7 +1035,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
                 profileListWithOrder.forEach {
                     TcpingLatency().apply {
-                        mainActivity=activity as MainActivity
+                        mainActivity = activity as MainActivity
                         tcpingProfile = it
                         latencySubscriptionAdapter = subscriptionsAdapter
                         latencyProfileAdapter = profilesAdapter
@@ -1111,6 +1120,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             profilesAdapter.refreshId(profileId)
         }
     }
+
     fun onTrafficPersisted(profileId: Long) {
         statsCache.remove(profileId)
         profilesAdapter.deepRefreshId(profileId)
