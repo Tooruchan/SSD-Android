@@ -12,6 +12,7 @@
     <string name="message_subscribe_fail">Subscribe fail</string>
     <string name="message_subscribe_success">Subscribe success</string>
     <string name="message_loading_subscription">Loading subscription&#8230;</string>
+    <string name="message_premine_detected">SSD will not be able to run in %s device in the future!</string>
     <string name="message_mine_detected">SSD cannot run in %s device, bye!</string>
     <string name="message_disconnect_first">Please disconnect first</string>
     <string name="message_updating_subscription">Updating subscription&#8230;</string>
@@ -24,7 +25,10 @@
     <string name="navigation_project_repository">Project Repository</string>
     <!-- DSS -->
 
-    <string name="app_name">Shadowsocks</string>
+    <!-- SSD -->
+    <!--<string name="app_name">Shadowsocks</string>-->
+    <string name="app_name">SSD</string>
+    <!-- DSS -->
     <string name="quick_toggle">Toggle</string>
     <string name="send_email">Send email</string>
 

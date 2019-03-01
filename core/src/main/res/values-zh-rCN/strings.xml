@@ -13,6 +13,7 @@
     <string name="message_subscribe_success">订阅成功</string>
     <string name="message_loading_subscription">订阅加载中&#8230;</string>
     <string name="message_mine_detected">SSD 无法运行于 %s 设备，告辞！</string>
+    <string name="message_premine_detected">SSD 未来将无法运行于 %s 设备！</string>
     <string name="message_disconnect_first">请先断开连接</string>
     <string name="message_updating_subscription">订阅更新中&#8230;</string>
     <string name="message_virus_detected">SSD 无法运行于安装有 %s 的设备，告辞！</string>

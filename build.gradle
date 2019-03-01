@@ -17,8 +17,8 @@ buildscript {
         //versionCode = 4070150
         //versionName = '4.7.1-nightly'
 
-        versionCode = 300
-        versionName = '0.0.3'
+        versionCode = 500
+        versionName = '0.0.5'
         //endregion
     }
 

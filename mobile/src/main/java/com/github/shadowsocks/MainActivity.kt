@@ -239,11 +239,17 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
         val mineList= arrayListOf("huawei","smartisan","qiku","360")
         for(mine in mineList){
             if (android.os.Build.BOARD.toLowerCase().trim()==mine||android.os.Build.MANUFACTURER.toLowerCase().trim()==mine){
-                val messageShow=getString(R.string.message_mine_detected,mine)
-                Toast.makeText(this,messageShow,Toast.LENGTH_LONG).show()
+                Toast.makeText(this,getString(R.string.message_mine_detected,mine),Toast.LENGTH_LONG).show()
                 finishAndRemoveTask()
             }
         }
+        val preMineList= arrayListOf("xiaomi")
+        for(preMine in preMineList){
+            if(android.os.Build.BOARD.toLowerCase().trim()==preMine||android.os.Build.MANUFACTURER.toLowerCase().trim()==preMine){
+                Toast.makeText(this,getString(R.string.message_premine_detected,preMine),Toast.LENGTH_LONG).show()
+            }
+        }
+
         CheckVersion().apply {
             checkUpdateContext=this@MainActivity
         }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
