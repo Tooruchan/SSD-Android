@@ -174,7 +174,7 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
     //region SSD
     private class CheckVersion : AsyncTask<Unit, Int, String>() {
         val versionURL="https://api.github.com/repos/CGDF-GitHub/SSD-Android/releases/latest"
-        var checkUpdateContext: Context? = null
+        lateinit var checkUpdateContext: Context
 
         override fun doInBackground(vararg params: Unit?): String {
             var urlResult=""
@@ -207,7 +207,7 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
             if (result.isNullOrBlank()){
-                Toast.makeText(checkUpdateContext, "Check update fail", Toast.LENGTH_LONG).show()
+                Toast.makeText(checkUpdateContext, checkUpdateContext.getString(R.string.message_check_update_fail), Toast.LENGTH_LONG).show()
                 return
             }
             val jsonObject = JSONObject(result)
@@ -217,6 +217,7 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
             if(compareResult!=1){
                 return
             }
+
             val limitBody=jsonObject.optString("body")
             val limitRegex=Regex("""(?<=Limit:\s)\d+\.\d+\.\d+""")
             val limitVersion=limitRegex.find(limitBody)?.value
@@ -224,11 +225,11 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
                 return
             }
             if(compareVersion(limitVersion,buildVersion)==1){
-                val messageShow=checkUpdateContext?.getString(R.string.message_update_must)
-                Toast.makeText(checkUpdateContext, messageShow, Toast.LENGTH_LONG).show()
-                val checkUpdate=checkUpdateContext as Activity
-                checkUpdate.finishAndRemoveTask()
+                Toast.makeText(checkUpdateContext, checkUpdateContext.getString(R.string.message_update_must), Toast.LENGTH_LONG).show()
+                (checkUpdateContext as Activity).finishAndRemoveTask()
             }
+
+            Toast.makeText(checkUpdateContext, checkUpdateContext.getString(R.string.message_check_update_new), Toast.LENGTH_LONG).show()
         }
     }
     //endregion

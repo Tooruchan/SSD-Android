@@ -8,6 +8,8 @@
     <string name="latency_pending">队列中</string>
     <string name="latency_error">失败</string>
     <string name="tcping_latency">Tcping 延迟</string>
+    <string name="message_check_update_fail">检查 SSD 更新失败</string>
+    <string name="message_check_update_new">SSD 有新版本</string>
     <string name="message_update_must">当前 SSD 版本已过期</string>
     <string name="message_subscribe_fail">订阅失败</string>
     <string name="message_subscribe_success">订阅成功</string>
