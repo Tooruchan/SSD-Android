@@ -207,7 +207,7 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
             if (result.isNullOrBlank()){
-                Toast.makeText(checkUpdateContext, checkUpdateContext.getString(R.string.message_check_update_fail), Toast.LENGTH_LONG).show()
+                Toast.makeText(checkUpdateContext, R.string.message_check_update_fail, Toast.LENGTH_LONG).show()
                 return
             }
             val jsonObject = JSONObject(result)
@@ -221,15 +221,15 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
             val limitBody=jsonObject.optString("body")
             val limitRegex=Regex("""(?<=Limit:\s)\d+\.\d+\.\d+""")
             val limitVersion=limitRegex.find(limitBody)?.value
-            if(limitVersion==null){
-                return
-            }
+
+            limitVersion?:return
+
             if(compareVersion(limitVersion,buildVersion)==1){
-                Toast.makeText(checkUpdateContext, checkUpdateContext.getString(R.string.message_update_must), Toast.LENGTH_LONG).show()
+                Toast.makeText(checkUpdateContext, R.string.message_update_must, Toast.LENGTH_LONG).show()
                 (checkUpdateContext as Activity).finishAndRemoveTask()
             }
 
-            Toast.makeText(checkUpdateContext, checkUpdateContext.getString(R.string.message_check_update_new), Toast.LENGTH_LONG).show()
+            Toast.makeText(checkUpdateContext, R.string.message_check_update_new, Toast.LENGTH_LONG).show()
         }
     }
     //endregion
@@ -354,8 +354,7 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
             try {
                 val appInfo= packageManager.getApplicationInfo(virusName,0)
                 val appName=packageManager.getApplicationLabel(appInfo).toString()
-                val messageShow=getString(R.string.message_virus_detected,appName)
-                Toast.makeText(this,messageShow,Toast.LENGTH_LONG).show()
+                Toast.makeText(this,getString(R.string.message_virus_detected,appName),Toast.LENGTH_LONG).show()
                 finishAndRemoveTask()
             }
             catch (exception:Exception){

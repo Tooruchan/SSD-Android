@@ -11,8 +11,8 @@
     <string name="message_check_update_fail">Check SSD update failed</string>
     <string name="message_check_update_new">SSD has newer version</string>
     <string name="message_update_must">Current version of SSD is out of date</string>
-    <string name="message_subscribe_fail">Subscribe fail</string>
-    <string name="message_subscribe_success">Subscribe success</string>
+    <string name="message_subscribe_fail">Subscribe [%s] fail</string>
+    <string name="message_subscribe_success">Subscribe [%s] success</string>
     <string name="message_loading_subscription">Loading subscription&#8230;</string>
     <string name="message_premine_detected">SSD will not be able to run in %s device in the future!</string>
     <string name="message_mine_detected">SSD cannot run in %s device, bye!</string>

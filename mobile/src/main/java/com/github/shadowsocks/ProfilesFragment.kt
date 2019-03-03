@@ -674,8 +674,18 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
+
+            var oldSubscription = SubscriptionManager.getAllSubscriptions()?.firstOrNull {
+                it.url == urlParse
+            }
+            var oldAirport = "?"
+            if (oldSubscription != null) {
+                oldAirport = oldSubscription.airport
+            }
+
             if (result.isNullOrBlank()) {
-                Toast.makeText(parseContext, parseContext?.getString(R.string.message_subscribe_fail), Toast.LENGTH_SHORT).show()
+                val toastMessage = parseContext?.getString(R.string.message_subscribe_fail, oldAirport)
+                Toast.makeText(parseContext, toastMessage, Toast.LENGTH_SHORT).show()
                 return
             }
 
@@ -700,8 +710,11 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     pluginOptions = jsonObject.optString("plugin_options", "")
                 }
 
-                val oldSubscription = SubscriptionManager.getAllSubscriptions()?.firstOrNull {
+                oldSubscription = SubscriptionManager.getAllSubscriptions()?.firstOrNull {
                     it.url == newSubscription.url
+                }
+                if (oldSubscription != null) {
+                    oldAirport = oldSubscription.airport
                 }
 
                 var oldSelectedServer: Profile? = null
@@ -753,11 +766,11 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 }
                 SubscriptionManager.updateSubscription(newSubscription)
                 addSubscriptionsAdapter.onAdd(newSubscription)
-                val messageShow = parseContext?.getString(R.string.message_subscribe_success)
-                Toast.makeText(parseContext, messageShow, Toast.LENGTH_SHORT).show()
+                val toastMessage = parseContext?.getString(R.string.message_subscribe_success, oldAirport)
+                Toast.makeText(parseContext, toastMessage, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                val messageShow = parseContext?.getString(R.string.message_subscribe_fail)
-                Toast.makeText(parseContext, messageShow, Toast.LENGTH_SHORT).show()
+                val toastMessage = parseContext?.getString(R.string.message_subscribe_fail, oldAirport)
+                Toast.makeText(parseContext, toastMessage, Toast.LENGTH_SHORT).show()
                 SubscriptionManager.delSubscriptionWithProfiles(newSubscription.id)
             }
         }
@@ -776,8 +789,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     .setTitle(R.string.add_subscription)
                     .setNegativeButton(android.R.string.cancel, null)
                     .setPositiveButton(android.R.string.ok) { _, _ ->
-                        val messageShow = getString(R.string.message_loading_subscription)
-                        Toast.makeText(context, messageShow, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, R.string.message_loading_subscription, Toast.LENGTH_SHORT).show()
 
                         val singleThreadExecutor = Executors.newSingleThreadExecutor()
                         ParseURL().apply {
@@ -957,7 +969,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             //region SSD
             R.id.action_add_subscription -> {
                 if (!subscriptionsAdapter.lockEditable) {
-                    Toast.makeText(context, getString(R.string.message_profiles_being_used), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.message_profiles_being_used, Toast.LENGTH_SHORT).show()
                     return true
                 }
                 subscriptionsAdapter.lockEdit(false)
@@ -967,18 +979,17 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             }
             R.id.action_update_subscription -> {
                 if ((activity as MainActivity).state != BaseService.STOPPED) {
-                    Toast.makeText(context, getString(R.string.message_disconnect_first), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.message_disconnect_first, Toast.LENGTH_SHORT).show()
                     return true
                 }
 
                 if (!subscriptionsAdapter.lockEditable) {
-                    Toast.makeText(context, getString(R.string.message_profiles_being_used), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.message_profiles_being_used, Toast.LENGTH_SHORT).show()
                     return true
                 }
                 subscriptionsAdapter.lockEdit(false)
 
-                val messageShow = getString(R.string.message_updating_subscription)
-                Toast.makeText(context, messageShow, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.message_updating_subscription, Toast.LENGTH_SHORT).show()
 
                 val singleThreadExecutor = Executors.newSingleThreadExecutor()
                 SubscriptionManager.getAllSubscriptions()?.forEach {
@@ -997,12 +1008,12 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
 
             R.id.action_tcping_latency -> {
                 if ((activity as MainActivity).state != BaseService.STOPPED) {
-                    Toast.makeText(context, getString(R.string.message_disconnect_first), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.message_disconnect_first, Toast.LENGTH_SHORT).show()
                     return true
                 }
 
                 if (!subscriptionsAdapter.lockEditable || !profilesAdapter.lockEditable) {
-                    Toast.makeText(context, getString(R.string.message_profiles_being_used), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.message_profiles_being_used, Toast.LENGTH_SHORT).show()
                     return true
                 }
                 subscriptionsAdapter.lockEdit(false)

@@ -11,8 +11,8 @@
     <string name="message_check_update_fail">检查 SSD 更新失败</string>
     <string name="message_check_update_new">SSD 有新版本</string>
     <string name="message_update_must">当前 SSD 版本已过期</string>
-    <string name="message_subscribe_fail">订阅失败</string>
-    <string name="message_subscribe_success">订阅成功</string>
+    <string name="message_subscribe_fail">订阅 [%s] 失败</string>
+    <string name="message_subscribe_success">订阅 [%s] 成功</string>
     <string name="message_loading_subscription">订阅加载中&#8230;</string>
     <string name="message_mine_detected">SSD 无法运行于 %s 设备，告辞！</string>
     <string name="message_premine_detected">SSD 未来将无法运行于 %s 设备！</string>
