@@ -381,7 +381,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             val share = itemView.findViewById<View>(R.id.share)
             share.setOnClickListener {
                 clipboard.primaryClip = ClipData.newPlainText(null, item.url)
-                Toast.makeText(requireContext(), "url", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), R.string.message_subscription_copied, Toast.LENGTH_SHORT).show()
             }
             serverDroplist.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onNothingSelected(parent: AdapterView<*>?) {

@@ -19,7 +19,7 @@
     <string name="message_disconnect_first">Please disconnect first</string>
     <string name="message_updating_subscription">Updating subscription&#8230;</string>
     <string name="message_virus_detected">SSD cannot run in the device that installed %s, bye!</string>
-    <string name="message_subscription_shared">Subscription URL has been copied to clipboard</string>
+    <string name="message_subscription_copied">Subscription URL has been copied to clipboard</string>
     <string name="message_profiles_being_used">Profiles are being used, please wait</string>
     <string name="subscription_expiry">%s %dd</string>
     <string name="title_subscription_profiles">Subscription profile(s)</string>
