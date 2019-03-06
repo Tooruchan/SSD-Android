@@ -312,6 +312,9 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         fun remove(pos: Int) {
             profiles.removeAt(pos)
             notifyItemRemoved(pos)
+            //region SSD
+            checkVisible()
+            //endregion
         }
 
         fun undo(actions: List<Pair<Int, Profile>>) {
@@ -319,6 +322,9 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 profiles.add(index, item)
                 notifyItemInserted(index)
             }
+            //region SSD
+            checkVisible()
+            //endregion
         }
 
         fun commit(actions: List<Pair<Int, Profile>>) {
@@ -353,6 +359,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     subscriptionsAdapter.refreshSubscriptionId(subscriptionId)
                 }
             }
+            checkVisible()
             //endregion
         }
     }
@@ -501,7 +508,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     val itemView: TextView = super.getDropDownView(position, convertView, parent) as TextView
                     val viewItem = getItem(position)!!
                     val viewText = "[" + latencyText(viewItem) + " x" + viewItem.ratio + "] " + viewItem.name
-                    itemView.setText(viewText)
+                    itemView.text = viewText
                     return itemView
                 }
             }
@@ -545,6 +552,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             SubscriptionManager.delSubscriptionWithProfiles(deleteSubscriptionId)
             subscriptions.removeAt(pos)
             notifyItemRemoved(pos)
+            checkVisible()
         }
 
         override fun onRemove(subscriptionId: Long) {
@@ -556,6 +564,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             if (subscriptionId == ProfileManager.getProfile(DataStore.profileId)?.subscription) {
                 DataStore.profileId = 0
             }
+            checkVisible()
         }
 
         fun refreshSubscriptionId(id: Long) {
@@ -766,7 +775,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 }
                 SubscriptionManager.updateSubscription(newSubscription)
                 addSubscriptionsAdapter.onAdd(newSubscription)
-                val toastMessage = parseContext?.getString(R.string.message_subscribe_success, oldAirport)
+                val toastMessage = parseContext?.getString(R.string.message_subscribe_success, newSubscription.airport)
                 Toast.makeText(parseContext, toastMessage, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 val toastMessage = parseContext?.getString(R.string.message_subscribe_fail, oldAirport)
@@ -819,19 +828,17 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         val profileTitle = view?.findViewById<TextView>(R.id.tv_title_common_profile)
         val subscriptionsList = view?.findViewById<RecyclerView>(R.id.list_subscription)
         val subscriptionTitle = view?.findViewById<TextView>(R.id.tv_title_subscription)
-        if (!SubscriptionManager.isNotEmpty()) {
-            //if subscription is empty
-            subscriptionsList?.visibility = View.GONE
-            subscriptionTitle?.visibility = View.GONE
+        if (subscriptionsAdapter.subscriptions.isEmpty()) {
+            subscriptionsList?.visibility = View.INVISIBLE
+            subscriptionTitle?.visibility = View.INVISIBLE
             profilesList?.visibility = View.VISIBLE
             profileTitle?.visibility = View.VISIBLE
         } else {
             subscriptionsList?.visibility = View.VISIBLE
             subscriptionTitle?.visibility = View.VISIBLE
-            if (!ProfileManager.withoutSubscriptionIsNotEmpty()) {
-                //if subscription is not empty and profile is empty
-                profilesList?.visibility = View.GONE
-                profileTitle?.visibility = View.GONE
+            if (profilesAdapter.profiles.isEmpty()) {
+                profilesList?.visibility = View.INVISIBLE
+                profileTitle?.visibility = View.INVISIBLE
             } else {
                 profilesList?.visibility = View.VISIBLE
                 profileTitle?.visibility = View.VISIBLE
