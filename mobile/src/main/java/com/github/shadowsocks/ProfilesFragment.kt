@@ -634,20 +634,20 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 return Profile.LATENCY_ERROR
             }
             val tcpingSocket = Socket(Proxy.NO_PROXY)
-            val profileIP = InetAddress.getByName(tcpingProfile.host)
-            val profileAddress = InetSocketAddress(profileIP, tcpingProfile.remotePort)
             var latency = Profile.LATENCY_ERROR
             try {
+                val profileIP = InetAddress.getByName(tcpingProfile.host)
+                val profileAddress = InetSocketAddress(profileIP, tcpingProfile.remotePort)
                 val stopwatchStart = System.currentTimeMillis()
                 tcpingSocket.connect(profileAddress, 2000)
                 val stopwatchTime = (System.currentTimeMillis() - stopwatchStart).toInt()
-                if (tcpingSocket.isConnected()) {
+                if (tcpingSocket.isConnected) {
                     latency = stopwatchTime
                 }
             } catch (e: Exception) {
             }
 
-            if (!tcpingSocket.isClosed()) {
+            if (!tcpingSocket.isClosed) {
                 tcpingSocket.close()
             }
             return latency
@@ -1042,15 +1042,15 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 profileListWithOrder.forEach {
                     it.latency = Profile.LATENCY_PENDING
                     ProfileManager.updateProfile(it)
-                    if (it.subscription == 0L) {
-                        profilesAdapter.deepRefreshId(it.id)
-                    } else {
-                        subscriptionsAdapter.refreshProfileId(it.id)
-                    }
+                }
+                profilesAdapter.profiles.forEach {
+                    profilesAdapter.deepRefreshId(it.id)
+                }
+                subscriptionsAdapter.subscriptions.forEach {
+                    subscriptionsAdapter.refreshSubscriptionId(it.id)
                 }
 
                 val singleThreadExecutor = Executors.newSingleThreadExecutor()
-
                 profileListWithOrder.forEach {
                     TcpingLatency().apply {
                         mainActivity = activity as MainActivity

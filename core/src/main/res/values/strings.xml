@@ -14,8 +14,8 @@
     <string name="message_subscribe_fail">Subscribe [%s] fail</string>
     <string name="message_subscribe_success">Subscribe [%s] success</string>
     <string name="message_loading_subscription">Loading subscription&#8230;</string>
-    <string name="message_premine_detected">SSD will not be able to run in %s device in the future!</string>
-    <string name="message_mine_detected">SSD cannot run in %s device, bye!</string>
+    <string name="message_premine_detected">SSD will not be able to run in %s in the future!</string>
+    <string name="message_mine_detected">SSD cannot run in %s, bye!</string>
     <string name="message_disconnect_first">Please disconnect first</string>
     <string name="message_updating_subscription">Updating subscription&#8230;</string>
     <string name="message_virus_detected">SSD cannot run in the device that installed %s, bye!</string>
