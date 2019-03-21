@@ -279,10 +279,10 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             undoManager.flush()
             val pos = itemCount
             profiles += profile
-            notifyItemInserted(pos)
             //region SSD
             checkVisible()
             //endregion
+            notifyItemInserted(pos)
         }
 
         fun move(from: Int, to: Int) {
@@ -320,11 +320,11 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         fun undo(actions: List<Pair<Int, Profile>>) {
             for ((index, item) in actions) {
                 profiles.add(index, item)
+                //region SSD
+                checkVisible()
+                //endregion
                 notifyItemInserted(index)
             }
-            //region SSD
-            checkVisible()
-            //endregion
         }
 
         fun commit(actions: List<Pair<Int, Profile>>) {
@@ -447,12 +447,10 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 expiry.text = "????-??-?? ??:??:??"
             }
             var editable = true
-            ProfileManager.getSubscription(item.id)?.firstOrNull {
+            for (it in ProfileManager.getSubscription(item.id)!!) {
                 if (!isProfileEditable(it.id)) {
                     editable = false
-                    true
-                } else {
-                    false
+                    break
                 }
             }
             editable = editable && subscriptionsAdapter.lockEditable
@@ -543,8 +541,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         override fun onAdd(subscription: Subscription) {
             val pos = itemCount
             subscriptions += subscription
-            notifyItemInserted(pos)
             checkVisible()
+            notifyItemInserted(pos)
         }
 
         fun remove(pos: Int) {
@@ -733,6 +731,9 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 }
 
                 jsonObject.optJSONArray("servers")?.let {
+                    if (it.length() == 0) {
+                        throw Exception("Empty Servers")
+                    }
                     for (index in 0 until it.length()) {
                         val newProfileJSON = it.optJSONObject(index)
                         ProfileManager.createSubscriptionProfile().apply {
@@ -824,24 +825,27 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
     val subscriptionsAdapter by lazy { ProfileSubscriptionsAdapter() }
 
     fun checkVisible() {
-        val profilesList = view?.findViewById<RecyclerView>(R.id.list)
-        val profileTitle = view?.findViewById<TextView>(R.id.tv_title_common_profile)
-        val subscriptionsList = view?.findViewById<RecyclerView>(R.id.list_subscription)
         val subscriptionTitle = view?.findViewById<TextView>(R.id.tv_title_subscription)
+        val subscriptionsList = view?.findViewById<RecyclerView>(R.id.list_subscription)
+        val profileTitle = view?.findViewById<TextView>(R.id.tv_title_common_profile)
+        val profilesList = view?.findViewById<RecyclerView>(R.id.list)
         if (subscriptionsAdapter.subscriptions.isEmpty()) {
-            subscriptionsList?.visibility = View.INVISIBLE
-            subscriptionTitle?.visibility = View.INVISIBLE
-            profilesList?.visibility = View.VISIBLE
+            subscriptionTitle?.visibility = View.GONE
+            subscriptionsList?.visibility = View.GONE
             profileTitle?.visibility = View.VISIBLE
+            profilesList?.visibility = View.VISIBLE
+            profilesList?.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
         } else {
-            subscriptionsList?.visibility = View.VISIBLE
             subscriptionTitle?.visibility = View.VISIBLE
+            subscriptionsList?.visibility = View.VISIBLE
+            subscriptionsList?.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
             if (profilesAdapter.profiles.isEmpty()) {
-                profilesList?.visibility = View.INVISIBLE
-                profileTitle?.visibility = View.INVISIBLE
+                profileTitle?.visibility = View.GONE
+                profilesList?.visibility = View.GONE
             } else {
-                profilesList?.visibility = View.VISIBLE
                 profileTitle?.visibility = View.VISIBLE
+                profilesList?.visibility = View.VISIBLE
+                profilesList?.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
             }
         }
     }
@@ -886,8 +890,13 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN,
                 ItemTouchHelper.START or ItemTouchHelper.END) {
             override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
-                    if (isProfileEditable((viewHolder as ProfileViewHolder).item.id))
-                        super.getSwipeDirs(recyclerView, viewHolder) else 0
+            //region SSD
+                    if (!profilesAdapter.lockEditable) {
+                        0
+                    } else
+                    //endregion
+                        if (isProfileEditable((viewHolder as ProfileViewHolder).item.id))
+                            super.getSwipeDirs(recyclerView, viewHolder) else 0
 
             override fun getDragDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
                     if (isEnabled) super.getDragDirs(recyclerView, viewHolder) else 0
@@ -922,6 +931,21 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         subscriptionsList.adapter = subscriptionsAdapter
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0,
                 ItemTouchHelper.START or ItemTouchHelper.END) {
+            override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
+                var swipeable = subscriptionsAdapter.lockEditable
+                for (it in ProfileManager.getSubscription((viewHolder as ProfileSubscriptionViewHolder).item.id)!!) {
+                    if (!isProfileEditable(it.id)) {
+                        swipeable = false
+                        break
+                    }
+                }
+                return if (swipeable) {
+                    super.getSwipeDirs(recyclerView, viewHolder)
+                } else {
+                    0
+                }
+            }
+
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val index = viewHolder.adapterPosition
                 subscriptionsAdapter.remove(index)
