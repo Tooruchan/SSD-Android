@@ -37,10 +37,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.appcompat.widget.Toolbar
 import androidx.appcompat.widget.TooltipCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.*
+import androidx.transition.Visibility
 import com.github.shadowsocks.aidl.TrafficStats
 import com.github.shadowsocks.bg.BaseService
 import com.github.shadowsocks.database.Profile
@@ -57,6 +59,7 @@ import com.github.shadowsocks.widget.UndoSnackbarManager
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
+import com.google.android.material.navigation.NavigationView
 import net.glxn.qrgen.android.QRCode
 import org.json.JSONArray
 import org.json.JSONObject
@@ -444,7 +447,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 val expiryDays = TimeUnit.DAYS.convert(expiryDate.time - Calendar.getInstance().time.time, TimeUnit.MILLISECONDS)
                 expiry.text = getString(R.string.subscription_expiry).format(item.expiry, expiryDays)
             } catch (e: Exception) {
-                expiry.text = "????-??-?? ??:??:??"
+                expiry.text = ""
             }
             var editable = true
             for (it in ProfileManager.getSubscription(item.id)!!) {
@@ -505,7 +508,11 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                 override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
                     val itemView: TextView = super.getDropDownView(position, convertView, parent) as TextView
                     val viewItem = getItem(position)!!
-                    val viewText = "[" + latencyText(viewItem) + " x" + viewItem.ratio + "] " + viewItem.name
+                    var ratioText = ""
+                    if (viewItem.ratio >= 0) {
+                        ratioText = " x" + viewItem.ratio
+                    }
+                    val viewText = "[" + latencyText(viewItem) + ratioText + "] " + viewItem.name
                     itemView.text = viewText
                     return itemView
                 }

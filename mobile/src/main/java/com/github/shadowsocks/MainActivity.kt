@@ -340,7 +340,7 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
                 }
                 //region SSD
                 R.id.project_repository -> {
-                    launchUrl("https://github.com/CGDF-Github/SSD-Android")
+                    launchUrl("https://github.com/TheCGDF/SSD-Android")
                     return true
                 }
                 //endregion
