@@ -63,6 +63,8 @@ import com.google.android.material.navigation.NavigationView
 import net.glxn.qrgen.android.QRCode
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.net.*
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
@@ -679,7 +681,10 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             var urlResult = ""
             urlParse = urlParse.trim()
             try {
-                urlResult = URL(urlParse).readText()
+                val urlConnection = URL(urlParse).openConnection()
+                urlConnection.connectTimeout = 2000
+                urlConnection.readTimeout = 3000
+                urlResult = urlConnection.getInputStream().bufferedReader().use(BufferedReader::readText)
             } catch (e: Exception) {
                 printLog(e)
             }
@@ -724,11 +729,16 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
                     pluginOptions = jsonObject.optString("plugin_options", "")
                 }
 
+
                 oldSubscription = SubscriptionManager.getAllSubscriptions()?.firstOrNull {
                     it.url == newSubscription.url
-                }
+                } ?: oldSubscription
+
                 if (oldSubscription != null) {
                     oldAirport = oldSubscription.airport
+                } else if (oldAirport == "") {
+                    //it's a new subscription
+                    oldAirport = newSubscription.airport
                 }
 
                 var oldSelectedServer: Profile? = null
