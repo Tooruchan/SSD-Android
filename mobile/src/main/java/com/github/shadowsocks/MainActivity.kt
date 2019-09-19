@@ -177,7 +177,7 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
 
     //region SSD
     private class CheckVersion : AsyncTask<Unit, Int, String>() {
-        val versionURL = "https://api.github.com/repos/CGDF-GitHub/SSD-Android/releases/latest"
+        val versionURL = "https://api.github.com/repos/TheCGDF/SSD-Android/releases/latest"
         lateinit var checkUpdateContext: Context
 
         override fun doInBackground(vararg params: Unit?): String {
