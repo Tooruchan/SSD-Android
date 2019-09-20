@@ -682,8 +682,8 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             urlParse = urlParse.trim()
             try {
                 val urlConnection = URL(urlParse).openConnection()
-                urlConnection.connectTimeout = 2000
-                urlConnection.readTimeout = 3000
+                urlConnection.connectTimeout = 4000
+                urlConnection.readTimeout = 4000
                 urlResult = urlConnection.getInputStream().bufferedReader().use(BufferedReader::readText)
             } catch (e: Exception) {
                 printLog(e)
@@ -711,8 +711,15 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
             val newSubscription = SubscriptionManager.createSubscription()
             try {
                 val base64Encoded = result.replace("ssd://", "")
-                val base64Decoded = Base64
-                        .decode(base64Encoded, Base64.URL_SAFE)
+                val decodeFlag = if (base64Encoded.indexOf('+') != -1 ||
+                        base64Encoded.indexOf('/') != -1 ||
+                        base64Encoded.indexOf('=') != -1) {
+                    Base64.DEFAULT
+                } else {
+                    Base64.URL_SAFE
+                }
+
+                val base64Decoded = Base64.decode(base64Encoded, decodeFlag)
                         .toString(Charset.forName("UTF-8"))
                 val jsonObject = JSONObject(base64Decoded)
                 newSubscription.apply {
@@ -907,7 +914,7 @@ class ProfilesFragment : ToolbarFragment(), Toolbar.OnMenuItemClickListener {
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN,
                 ItemTouchHelper.START or ItemTouchHelper.END) {
             override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
-            //region SSD
+                    //region SSD
                     if (!profilesAdapter.lockEditable) {
                         0
                     } else
