@@ -66,6 +66,7 @@ import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URL
+import java.util.*
 
 class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPreferenceDataStoreChangeListener,
         NavigationView.OnNavigationItemSelectedListener {
@@ -246,17 +247,12 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //region SSD
-        if (getProp("ro.build.version.emui").isNotEmpty()) {
-            Toast.makeText(this, getString(R.string.message_mine_detected, "EMUI"), Toast.LENGTH_LONG).show()
+        if (Build.BOARD.toLowerCase(Locale.getDefault()).trim() == "huawei" || Build.MANUFACTURER.toLowerCase(Locale.getDefault()).trim() == "huawei") {
+            Toast.makeText(this, getString(R.string.message_mine_detected, "HUAWEI"), Toast.LENGTH_LONG).show()
             finishAndRemoveTask()
         }
         if (getProp("ro.product.brand") == "smartisan" || getProp("ro.product.manufacturer") == "smartisan") {
-            Toast.makeText(this, getString(R.string.message_mine_detected, "SmartisanOS"), Toast.LENGTH_LONG).show()
-            finishAndRemoveTask()
-        }
-        if (getProp("ro.product.brand") == "qiku" || getProp("ro.product.manufacturer") == "qiku" ||
-                getProp("ro.product.brand") == "360" || getProp("ro.product.manufacturer") == "360") {
-            Toast.makeText(this, getString(R.string.message_mine_detected, "360 OS"), Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.message_mine_detected, "Smartisan"), Toast.LENGTH_LONG).show()
             finishAndRemoveTask()
         }
 

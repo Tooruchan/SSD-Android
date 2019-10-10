@@ -17,7 +17,7 @@ ShadowsocksD会跟随Shadowsocks更新代码。
 
 Android 5.0+
 
-非\[华为（EMUI）/360（360 OS）/锤子（SmartisanOS）\]系统
+非\[华为/锤子\]设备
 
 不建议使用\[小米（MIUI）\]系统
 
@@ -26,10 +26,6 @@ Android 5.0+
 ## Development - 开发
 
 \[Windows/Linux/MacOS\]
-
-```
-因overturn已被取代移除，现已可以在Windows平台上进行编译
-```
 
 需使用`git clone --recurse-submodules <repo>`或 `git submodule update --init --recursive`进行初始化
 
