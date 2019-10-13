@@ -11,7 +11,7 @@ ShadowsocksD会跟随Shadowsocks更新代码。
 
 ## Shared Wiki - 共享Wiki
 
-[ShadowsocksD项目共享Wiki](https://github.com/CGDF-Github/SSD-Windows/wiki)
+[ShadowsocksD项目共享Wiki](https://github.com/TheCGDF/SSD-Windows/wiki)
 
 ## Environment - 环境
 
