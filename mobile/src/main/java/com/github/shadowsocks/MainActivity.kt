@@ -248,16 +248,16 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
         super.onCreate(savedInstanceState)
         //region SSD
         if (Build.BOARD.toLowerCase(Locale.getDefault()).trim() == "huawei" || Build.MANUFACTURER.toLowerCase(Locale.getDefault()).trim() == "huawei") {
-            Toast.makeText(this, getString(R.string.message_mine_detected, "HUAWEI"), Toast.LENGTH_LONG).show()
-            finishAndRemoveTask()
+        //    Toast.makeText(this, getString(R.string.message_mine_detected, "HUAWEI"), Toast.LENGTH_LONG).show()
+        //    finishAndRemoveTask()
         }
         if (getProp("ro.product.brand") == "smartisan" || getProp("ro.product.manufacturer") == "smartisan") {
-            Toast.makeText(this, getString(R.string.message_mine_detected, "Smartisan"), Toast.LENGTH_LONG).show()
-            finishAndRemoveTask()
+        //    Toast.makeText(this, getString(R.string.message_mine_detected, "Smartisan"), Toast.LENGTH_LONG).show()
+            //   finishAndRemoveTask()
         }
 
         if (getProp("ro.miui.ui.version.code").isNotEmpty() || getProp("ro.miui.ui.version.name").isNotEmpty()) {
-            Toast.makeText(this, getString(R.string.message_premine_detected, "MIUI"), Toast.LENGTH_LONG).show()
+        //    Toast.makeText(this, getString(R.string.message_premine_detected, "MIUI"), Toast.LENGTH_LONG).show()
         }
 
         CheckVersion().apply {
@@ -352,13 +352,14 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
         super.onStart()
         //region SSD
         val virusList = arrayListOf(
-                "com.qihoo360.mobilesafe",
-                "com.qihoo.appstore",
-                "com.qihoo.browser",
-                "cn.opda.a.phonoalbumshoushou",
-                "com.baidu.appsearch",
-                "com.tencent.qqpimsecure",
-                "com.market2345"
+//                "com.qihoo360.mobilesafe",
+//                "com.qihoo.appstore",
+//                "com.qihoo.browser",
+//                "cn.opda.a.phonoalbumshoushou",
+//                "com.baidu.appsearch",
+//                "com.tencent.qqpimsecure",
+//                "com.market2345"
+                ""
         )
         for (virusName in virusList) {
             try {
